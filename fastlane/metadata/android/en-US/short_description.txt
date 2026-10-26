@@ -1,1 +1,1 @@
-Apps run only when you open them. Stops background apps with Shizuku.
+The apps you pick run only while you use them. No root, works with Shizuku.

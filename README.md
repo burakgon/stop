@@ -4,7 +4,22 @@
 
 <h1 align="center">Stop</h1>
 
-<p align="center"><b>Apps run only when you open them.</b></p>
+<p align="center"><b>Background app blocker for Android.</b><br>The apps you pick run only while you use them.</p>
+
+<p align="center">
+  <a href="https://github.com/burakgon/stop/releases/latest"><img src="https://img.shields.io/github/v/release/burakgon/stop?label=download" alt="Latest release"></a>
+  <img src="https://img.shields.io/badge/Android-9%2B-3DDC84?logo=android&logoColor=white" alt="Android 9 or newer">
+  <img src="https://img.shields.io/badge/root-not%20needed-2ea44f" alt="No root needed">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="GPL-3.0"></a>
+</p>
+
+- **Leave an app and it's force-stopped** after a grace period you choose. Until you open it again,
+  it gets no background sync, alarms, jobs or push messages.
+- **If something wakes it up anyway,** Stop stops it again within about a second.
+- **Install a new app and Stop asks** right away whether it may run in the background.
+
+No root needed: Stop works through [Shizuku](https://shizuku.rikka.app). Unlike Samsung's *Deep
+sleeping apps*, it never disables or hides anything, so Play Store updates keep working.
 
 <p align="center">
   <img src="docs/screenshots/home.png" width="24%" alt="Home: protection status, apps waiting for a decision, blocked apps still running">
@@ -13,11 +28,7 @@
   <img src="docs/screenshots/activity.png" width="24%" alt="Activity: what was stopped, when and why">
 </p>
 
-Stop keeps the apps you choose from running in the background. A blocked app works normally while
-you use it. When you leave it, Stop closes it for real after a short grace period, and it can't wake
-itself up again for alarms, background jobs or push messages until you open it the next time.
-
-It was made for a very specific annoyance: dozens of apps you rarely use (in my case, around 40 EV
+I made it for a very specific annoyance: dozens of apps you rarely use (in my case, around 40 EV
 charging apps) that keep waking up in the background all day.
 
 <details>

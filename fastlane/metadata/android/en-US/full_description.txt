@@ -1,4 +1,4 @@
-<p>Stop keeps the apps you choose from running in the background. A blocked app works normally while you use it. When you leave it, Stop closes it for real after a short grace period, and it can't wake itself up again for alarms, background jobs or push messages until you open it the next time.</p>
+<p><b>Stop is a background app blocker for Android.</b> The apps you pick run only while you use them. Leave one and Stop force-stops it after a grace period you choose: until you open it again, it gets no background sync, alarms, jobs or push messages. If something wakes it up anyway, Stop stops it again within about a second, and it asks you about every app you install.</p>
 
 <p><b>Features</b></p>
 <ul>
