@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="brand">#FFD93A36</color>
+    <color name="window_background">#FFFFF8F7</color>
+    <color name="shortcut_background">#FFFFF1EF</color>
+</resources>

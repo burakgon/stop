@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Stop</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_apps">Apps</string>
+    <string name="nav_activity">Activity</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Protection status -->
+    <string name="status_active_title">Protection is on</string>
+    <plurals name="status_active_body">
+        <item quantity="one">%d app only runs while you use it</item>
+        <item quantity="other">%d apps only run while you use them</item>
+    </plurals>
+    <string name="status_active_none">No apps are blocked yet. Choose some under Apps.</string>
+    <string name="status_starting_title">Starting protection…</string>
+    <string name="status_starting_body">Connecting to Shizuku</string>
+    <string name="status_paused_title">Protection is paused</string>
+    <string name="status_paused_body">Blocked apps can run in the background until you resume.</string>
+    <string name="status_not_running_title">Shizuku isn\'t running</string>
+    <string name="status_not_running_body">Start Shizuku to resume protection. Blocked apps you haven\'t opened since stay asleep in the meantime.</string>
+    <string name="status_not_installed_title">Shizuku is needed</string>
+    <string name="status_not_installed_body">Stop uses Shizuku to stop other apps. Install it and start it once.</string>
+    <string name="status_permission_title">Allow Stop in Shizuku</string>
+    <string name="status_permission_body">Shizuku asks once whether Stop may use it.</string>
+    <string name="status_permission_denied_body">Stop\'s access was denied. Allow it in the Shizuku app under Authorized apps.</string>
+    <string name="status_outdated_title">Shizuku is out of date</string>
+    <string name="status_outdated_body">Update Shizuku to version 11 or newer.</string>
+    <string name="status_error_title">Protection couldn\'t start</string>
+    <string name="mode_adb">Shizuku · ADB</string>
+    <string name="mode_root">Shizuku · root</string>
+
+    <!-- Common actions -->
+    <string name="action_pause">Pause</string>
+    <string name="action_resume">Resume</string>
+    <string name="action_open_shizuku">Open Shizuku</string>
+    <string name="action_get_shizuku">Get Shizuku</string>
+    <string name="action_grant_access">Grant access</string>
+    <string name="action_retry">Try again</string>
+    <string name="action_stop_now">Stop now</string>
+    <string name="action_stop_all">Stop all</string>
+    <string name="action_see_all">See all</string>
+    <string name="action_open">Open</string>
+    <string name="action_app_info">App info</string>
+    <string name="action_continue">Continue</string>
+    <string name="action_skip">Skip</string>
+    <string name="action_done">Done</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_get_started">Get started</string>
+    <string name="action_allow_notifications">Allow notifications</string>
+    <string name="action_decide_later">Decide later</string>
+    <string name="action_search">Search</string>
+    <string name="action_close_search">Close search</string>
+    <string name="action_more">More options</string>
+
+    <!-- Home -->
+    <string name="stat_stops_today">stopped today</string>
+    <string name="stat_wakeups_today">wake-ups blocked</string>
+    <string name="stat_blocked_apps">apps blocked</string>
+    <string name="home_needs_decision">Needs your decision</string>
+    <string name="home_new_app">Just installed</string>
+    <string name="home_running">Running now</string>
+    <string name="home_running_empty">No blocked apps are running.</string>
+    <string name="running_in_use">In use</string>
+    <string name="running_stops_in">Stops in %1$s</string>
+    <string name="running_stopping">Stopping…</string>
+    <string name="home_recent">Recent activity</string>
+    <string name="home_recent_empty">Nothing stopped yet. When a blocked app tries to run in the background, it shows up here.</string>
+
+    <!-- Stop reasons -->
+    <string name="reason_woke">Woke up on its own</string>
+    <string name="reason_left">Kept running after you left</string>
+    <string name="reason_running">Was running in the background</string>
+    <string name="reason_manual">Stopped by you</string>
+
+    <!-- Time and durations -->
+    <string name="time_just_now">Just now</string>
+    <string name="time_minutes_ago">%d min ago</string>
+    <string name="time_hours_ago">%d h ago</string>
+    <string name="time_today">Today</string>
+    <string name="time_yesterday">Yesterday</string>
+    <string name="duration_seconds">%d s</string>
+    <string name="duration_minutes">%d min</string>
+    <string name="duration_hours">%d h</string>
+    <string name="grace_immediately">Right away</string>
+
+    <!-- Apps -->
+    <string name="apps_title">Apps</string>
+    <string name="apps_search_hint">Search apps</string>
+    <string name="filter_all">All</string>
+    <string name="filter_blocked">Stopped</string>
+    <string name="filter_allowed">Allowed</string>
+    <string name="filter_new">New</string>
+    <string name="apps_hint">Apps that are switched on are stopped whenever you leave them.</string>
+    <string name="app_status_blocked">Stopped when you leave it</string>
+    <string name="app_status_allowed">Can run in the background</string>
+    <string name="app_status_new_blocked">New · stopped until you decide</string>
+    <string name="app_status_new_allowed">New · allowed until you decide</string>
+    <string name="app_status_protected">Needed by your phone</string>
+    <plurals name="app_status_stops_today">
+        <item quantity="one">Stopped once today</item>
+        <item quantity="other">Stopped %d times today</item>
+    </plurals>
+    <string name="app_status_needed_by_stop">Stop needs it to work</string>
+    <string name="app_system_badge">System</string>
+    <string name="menu_show_system">Show system apps</string>
+    <string name="menu_block_shown">Stop all shown in background</string>
+    <string name="menu_allow_shown">Allow all shown</string>
+    <string name="apps_empty_search">No apps match “%1$s”</string>
+    <string name="apps_empty_filter">Nothing here</string>
+    <plurals name="apps_bulk_confirm_block">
+        <item quantity="one">Stop %d app in the background?</item>
+        <item quantity="other">Stop %d apps in the background?</item>
+    </plurals>
+    <plurals name="apps_bulk_confirm_allow">
+        <item quantity="one">Let %d app run in the background?</item>
+        <item quantity="other">Let %d apps run in the background?</item>
+    </plurals>
+    <string name="apps_bulk_confirm">Apply</string>
+
+    <!-- App details -->
+    <string name="detail_mode_block">Stop in background</string>
+    <string name="detail_mode_allow">Let it run</string>
+    <string name="detail_mode_block_hint">Runs only while you use it. It can\'t wake itself up, and Play Store updates keep working.</string>
+    <string name="detail_mode_allow_hint">Can run in the background, sync and send notifications.</string>
+    <string name="detail_grace_title">Grace period after you leave</string>
+    <string name="detail_grace_default">Default · %1$s</string>
+    <string name="detail_protected">Your phone needs this app, so Stop leaves it alone.</string>
+    <string name="detail_integration_accessibility">It runs an accessibility service you turned on, so Stop keeps it running.</string>
+    <string name="detail_integration_notification_listener">It reads your notifications, for example for a watch, so Stop keeps it running.</string>
+    <string name="detail_integration_autofill">It fills in your passwords, so Stop keeps it running.</string>
+    <string name="detail_integration_alarm_clock">It rings your alarms. Stopping it would delete them, so Stop keeps it running.</string>
+    <string name="detail_integration_device_admin">This app is a device admin. Stopping it can break features such as finding or locking your phone.</string>
+    <string name="detail_integration_wallpaper">This app draws your live wallpaper, which stops while the app is stopped.</string>
+    <string name="detail_activity">Activity</string>
+    <plurals name="detail_stops_today">
+        <item quantity="one">Stopped once today</item>
+        <item quantity="other">Stopped %d times today</item>
+    </plurals>
+    <plurals name="detail_stops_week">
+        <item quantity="one">%d time in the last 7 days</item>
+        <item quantity="other">%d times in the last 7 days</item>
+    </plurals>
+    <string name="detail_never_stopped">Not stopped in the last 30 days</string>
+
+    <!-- Activity -->
+    <string name="activity_title">Activity</string>
+    <string name="activity_week_title">Last 7 days</string>
+    <plurals name="activity_week_total">
+        <item quantity="one">%d stop</item>
+        <item quantity="other">%d stops</item>
+    </plurals>
+    <string name="filter_woke">Woke up</string>
+    <string name="filter_left">After leaving</string>
+    <string name="filter_manual">By you</string>
+    <string name="activity_empty_title">Nothing stopped yet</string>
+    <string name="activity_empty_body">When a blocked app tries to run in the background, it shows up here.</string>
+    <string name="menu_clear_history">Clear history</string>
+    <string name="activity_repeat">×%d</string>
+    <string name="activity_chart_description">Stops per day over the last 7 days</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_protection">Protection</string>
+    <string name="settings_protection">Stop blocked apps</string>
+    <string name="settings_protection_on">When you leave them, and when they try to run on their own</string>
+    <string name="settings_protection_off">Paused. Blocked apps can run in the background.</string>
+    <string name="settings_grace">Grace period</string>
+    <string name="settings_grace_summary">Blocked apps may keep running for %1$s after you leave them</string>
+    <string name="settings_grace_summary_none">Blocked apps are stopped right after you leave them</string>
+    <string name="settings_grace_dialog_body">A short grace period lets you switch to another app, like the camera, and come back without losing your place.</string>
+    <string name="settings_ongoing">Let ongoing tasks finish</string>
+    <string name="settings_ongoing_summary">Keep a blocked app running while it shows an ongoing notification, like music, navigation or a charging session</string>
+    <string name="settings_section_new_apps">New apps</string>
+    <string name="settings_ask">Ask about new apps</string>
+    <string name="settings_ask_summary">Get a notification whenever you install an app</string>
+    <string name="settings_new_default">Until you decide</string>
+    <string name="settings_new_default_block">New apps are stopped in the background</string>
+    <string name="settings_new_default_allow">New apps can run in the background</string>
+    <string name="settings_notifications_off">Notifications are off, so Stop can\'t ask you. Tap to allow them.</string>
+    <string name="settings_section_extra">Extra restrictions</string>
+    <string name="settings_extra">Also restrict battery usage</string>
+    <string name="settings_extra_summary">Marks blocked apps as Restricted in Android\'s battery settings, so they stay limited even while Shizuku isn\'t running. On some phones, restricted apps get Play Store updates later.</string>
+    <string name="settings_section_appearance">Appearance</string>
+    <string name="settings_theme">Theme</string>
+    <string name="theme_system">System default</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="settings_dynamic_color">Dynamic color</string>
+    <string name="settings_dynamic_color_summary">Use colors from your wallpaper</string>
+    <string name="settings_section_shizuku">Shizuku</string>
+    <string name="settings_shizuku_status">Status</string>
+    <string name="shizuku_connected_adb">Connected in ADB mode</string>
+    <string name="shizuku_connected_root">Connected in root mode</string>
+    <string name="settings_service">Stop service</string>
+    <string name="settings_service_running">Running since %1$s</string>
+    <string name="settings_service_not_running">Not running</string>
+    <string name="settings_section_maintenance">Maintenance</string>
+    <string name="settings_reset">Undo all restrictions</string>
+    <string name="settings_reset_summary">Lets every app run in the background again and forgets your choices</string>
+    <string name="settings_reset_confirm_title">Undo all restrictions?</string>
+    <string name="settings_reset_confirm_body">Every app will be allowed to run in the background again, and Stop forgets which apps you blocked. Do this before uninstalling Stop.</string>
+    <string name="settings_reset_confirm">Undo all</string>
+    <string name="settings_reset_done">All restrictions were removed</string>
+    <string name="settings_clear_history">Clear activity history</string>
+    <string name="settings_clear_history_done">History cleared</string>
+    <string name="settings_section_about">About</string>
+    <string name="settings_version">Version</string>
+    <string name="settings_source">Source code</string>
+    <string name="settings_source_summary">github.com/burakgon/stop</string>
+    <string name="settings_license">License</string>
+    <string name="settings_license_summary">GNU General Public License v3.0</string>
+    <string name="settings_privacy">Privacy</string>
+    <string name="settings_privacy_summary">Stop has no internet access. Nothing leaves your phone.</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_welcome_title">Apps run only when you open them</string>
+    <string name="onboarding_welcome_body">Stop closes the apps you choose as soon as you\'re done with them, and keeps them from waking up on their own.</string>
+    <string name="onboarding_feature_sleep_title">Asleep until you open them</string>
+    <string name="onboarding_feature_sleep_body">Blocked apps can\'t start themselves for alarms, background jobs or push messages.</string>
+    <string name="onboarding_feature_leave_title">Closed when you leave</string>
+    <string name="onboarding_feature_leave_body">After a short grace period, a blocked app is fully stopped, not just sent to the background.</string>
+    <string name="onboarding_feature_updates_title">Updates keep working</string>
+    <string name="onboarding_feature_updates_body">Nothing is disabled or hidden, so the Play Store keeps updating your apps.</string>
+    <string name="onboarding_shizuku_title">Connect Shizuku</string>
+    <string name="onboarding_shizuku_body">Android only lets the system stop other apps. Shizuku gives Stop that ability without rooting your phone.</string>
+    <string name="onboarding_shizuku_ready">Shizuku is ready</string>
+    <string name="onboarding_shizuku_uses">Stop uses it only to</string>
+    <string name="onboarding_shizuku_use_running">See which apps are running</string>
+    <string name="onboarding_shizuku_use_stop">Stop the apps you block</string>
+    <string name="onboarding_shizuku_use_installs">Notice when you install an app</string>
+    <string name="onboarding_notification_example_app">Charge Map</string>
+    <string name="onboarding_notification_example_time">now</string>
+    <string name="onboarding_shizuku_how">How do I start Shizuku?</string>
+    <string name="onboarding_shizuku_steps">1. Open Shizuku and follow its steps for wireless debugging.\n2. Tap Start. Stop notices as soon as Shizuku runs.\n3. After every reboot, start Shizuku again. Blocked apps stay asleep until then.</string>
+    <string name="onboarding_notifications_title">Get asked about new apps</string>
+    <string name="onboarding_notifications_body">Whenever you install an app, Stop asks whether it may run in the background. This needs notifications.</string>
+    <string name="onboarding_choose_title">Which apps may run in the background?</string>
+    <string name="onboarding_choose_body">Pick the apps you rely on for messages, calls, music or navigation. Every other app is stopped when you leave it.</string>
+    <string name="onboarding_suggested">Suggested</string>
+    <string name="onboarding_allow_all">Allow all</string>
+    <string name="onboarding_block_all">Block all</string>
+    <string name="onboarding_allow_shown">Allow these</string>
+    <string name="onboarding_block_shown">Block these</string>
+    <plurals name="onboarding_summary">
+        <item quantity="one">%d app will be stopped in the background</item>
+        <item quantity="other">%d apps will be stopped in the background</item>
+    </plurals>
+    <string name="onboarding_step">Step %1$d of %2$d</string>
+
+    <!-- New app prompt -->
+    <string name="new_app_title">%1$s was installed</string>
+    <string name="new_app_body">Should it be stopped whenever you\'re not using it?</string>
+    <string name="new_app_missing">This app is no longer installed.</string>
+
+    <!-- Quick Settings tile and launcher shortcut -->
+    <string name="tile_label">Stop apps</string>
+    <string name="tile_subtitle_ready">Tap to stop blocked apps</string>
+    <string name="tile_subtitle_paused">Paused</string>
+    <string name="shortcut_stop_all_short">Stop apps now</string>
+    <string name="shortcut_stop_all_long">Stop blocked apps now</string>
+    <string name="stop_all_unavailable">Stop can\'t reach Shizuku right now</string>
+    <string name="stop_all_none">No blocked apps were running</string>
+    <plurals name="stop_all_result">
+        <item quantity="one">Stopped %d app</item>
+        <item quantity="other">Stopped %d apps</item>
+    </plurals>
+
+    <!-- Notifications -->
+    <string name="channel_new_apps">New apps</string>
+    <string name="channel_new_apps_description">Asks what to do with apps you just installed</string>
+    <string name="channel_status">Protection status</string>
+    <string name="channel_status_description">Tells you when protection is paused because Shizuku isn\'t running</string>
+    <string name="new_app_notification_title">%1$s was installed</string>
+    <string name="new_app_notification_text">Stop it in the background, or let it run?</string>
+    <string name="new_app_notification_long">Stop it in the background, or let it run? Stopped apps only run while you use them. They can\'t wake themselves up, and Play Store updates keep working.</string>
+    <string name="action_stop_in_background">Stop in background</string>
+    <string name="action_let_it_run">Let it run</string>
+    <plurals name="new_apps_summary_title">
+        <item quantity="one">%d new app was installed</item>
+        <item quantity="other">%d new apps were installed</item>
+    </plurals>
+    <string name="new_apps_summary_text">Choose which ones may run in the background.</string>
+    <string name="paused_notification_title">Protection is paused</string>
+    <string name="paused_notification_text">Shizuku isn\'t running. Start it again so Stop can keep blocked apps from running in the background.</string>
+</resources>

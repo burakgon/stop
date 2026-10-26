@@ -1,0 +1,17 @@
+<p>Stop keeps the apps you choose from running in the background. A blocked app works normally while you use it. When you leave it, Stop closes it for real after a short grace period, and it can't wake itself up again for alarms, background jobs or push messages until you open it the next time.</p>
+
+<p><b>Features</b></p>
+<ul>
+<li>Blocked apps only run while you use them, with a grace period you choose (for all apps or per app)</li>
+<li>Apps that start on their own are stopped again within about a second</li>
+<li>Never in your way: apps on screen, flows they opened (camera, payment pages), Android Auto and apps left on top while the phone is locked are left alone</li>
+<li>Asks you about every newly installed app, right from the notification</li>
+<li>Play Store updates keep working: nothing is disabled, suspended, hidden or hibernated</li>
+<li>Activity log with a 7-day overview</li>
+<li>Quick Settings tile and launcher shortcut to stop all blocked apps at once</li>
+<li>Optional extra restrictions through Android's own battery settings</li>
+<li>No internet permission, no analytics, no ads</li>
+</ul>
+
+<p><b>Requirements</b></p>
+<p>Stop needs <a href="https://shizuku.rikka.app">Shizuku</a>, which you can start through wireless debugging on Android 11 and newer, from a computer, or with root. Your phone doesn't need to be rooted.</p>

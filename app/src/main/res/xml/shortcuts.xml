@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_stop"
+        android:shortcutId="stop_all"
+        android:shortcutLongLabel="@string/shortcut_stop_all_long"
+        android:shortcutShortLabel="@string/shortcut_stop_all_short">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="io.github.burakgon.stop.ui.StopAllActivity"
+            android:targetPackage="io.github.burakgon.stop" />
+    </shortcut>
+</shortcuts>
