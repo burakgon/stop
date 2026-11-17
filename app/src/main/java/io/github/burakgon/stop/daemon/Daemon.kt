@@ -183,7 +183,13 @@ internal class Daemon(private val selfPackage: String) {
         val activity = match.groupValues[2]
         if (packageName == selfPackage) return
         handler.post {
-            if (packageName !in restrictions.frozen && packageName !in restrictions.auto) return@post
+            // Rely on what the framework reports, not only on our own bookkeeping: a suspension
+            // that was never recorded still has to be lifted when the user taps the icon.
+            val frozen = packageName in restrictions.frozen
+            val auto = packageName in restrictions.auto
+            val suspended = system.isSuspended(packageName, userId)
+            debug.write("tap pkg=$packageName activity=$activity frozen=$frozen auto=$auto suspended=$suspended")
+            if (!frozen && !auto && !suspended) return@post
             val now = SystemClock.elapsedRealtime()
             // Only guards against the same start being echoed twice; a second real tap must work
             // again, and by then the app has usually been re-frozen by the background rules.
@@ -191,10 +197,10 @@ internal class Daemon(private val selfPackage: String) {
             tappedAt[packageName] = now
             Log.i(TAG, "frozen app $packageName was opened; restoring and launching it")
             recordEvent(packageName, StopReasons.TAPPED)
-            restore(packageName, shellFallback = true)
-            if (!launch(packageName, activity)) {
-                Log.w(TAG, "could not relaunch $packageName after restoring it")
-            }
+            val released = restore(packageName, shellFallback = true)
+            val launched = launch(packageName, activity)
+            debug.write("tap handled pkg=$packageName released=$released launched=$launched")
+            if (!launched) Log.w(TAG, "could not relaunch $packageName after restoring it")
             // The app is allowed to run now, so the background rules have to judge it again from
             // scratch the moment the user leaves it.
             enforcer.recheck(packageName)
@@ -667,29 +673,33 @@ internal class Daemon(private val selfPackage: String) {
         output(listOf("pm", if (disable) "disable-user" else "enable", "--user", userId.toString(), packageName)) != null
 
     /** Undoes whatever [block] did, so the app can be launched again. */
-    private fun restore(packageName: String, shellFallback: Boolean = false) {
-        when (restrictions.frozen[packageName]) {
-            FROZEN_DISABLE -> if (!system.setEnabled(packageName, true, userId) && shellFallback) {
-                disableViaShell(packageName, false)
-            }
+    private fun restore(packageName: String, shellFallback: Boolean = false): Boolean {
+        val mechanism = restrictions.frozen[packageName]
+        val released = when (mechanism) {
+            FROZEN_DISABLE -> system.setEnabled(packageName, true, userId) ||
+                (shellFallback && disableViaShell(packageName, false))
             FROZEN_HIDE -> system.setHidden(packageName, false, userId)
-            FROZEN_SUSPEND -> if (!system.setSuspended(packageName, false, userId, null) && shellFallback) {
-                suspendViaShell(packageName, false)
-            }
-            // Suspended from the home screen, which doesn't track the tool: undo both candidates.
-            null -> {
-                if (!system.setSuspended(packageName, false, userId, null) && shellFallback) {
-                    suspendViaShell(packageName, false)
-                }
+            FROZEN_SUSPEND -> system.setSuspended(packageName, false, userId, null) ||
+                (shellFallback && suspendViaShell(packageName, false))
+            // Suspended from the home screen, which doesn't record a mechanism: undo both.
+            else -> {
+                system.setSuspended(packageName, false, userId, null) ||
+                    (shellFallback && suspendViaShell(packageName, false))
                 system.setEnabled(packageName, true, userId)
+                !system.isSuspended(packageName, userId)
             }
         }
+        debug.write("restore pkg=$packageName mechanism=$mechanism released=$released")
+        // Keeping the record on failure matters: dropping it while the framework still holds the
+        // app suspended leaves a package that nothing tracks, so no later sweep can undo it.
+        if (!released) return false
         restrictions.manual.remove(packageName)
         // A restriction-store entry is only present for mode-based suspensions.
         if (restrictions.auto.remove(packageName)) restrictions.save()
         if (restrictions.frozen.remove(packageName) != null) restrictions.save()
         // Untracked suspensions are undone here too, so they still belong in the event log.
         recordEvent(packageName, StopReasons.THAW)
+        return true
     }
 
     /** Restores apps frozen under another mode, or that are no longer blocked. */

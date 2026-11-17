@@ -303,13 +303,14 @@ internal class Enforcer(private val host: Host, private val states: ProcStateTab
                     track.deadline = now + if (track.aliveSinceLeft) MIN_DELAY_MS else wakeDelay(track, now)
                 }
                 host.scheduleTick(track.deadline - now)
+                // One line per scheduled stop: the previous per-state dump filled the diagnostic
+                // file within hours, while a missing line is exactly what a stuck app looks like.
+                trace?.invoke(
+                    "schedule uid=$uid state=$procState reason=${track.reason} " +
+                        "grace=$grace stopIn=${track.deadline - now}",
+                )
             }
         }
-        trace?.invoke(
-            "observe uid=$uid state=$procState usage=$usage visible=${track.visible} " +
-                "inUse=${track.inUse} leftAt=${track.leftAt} deadline=${track.deadline} " +
-                "reason=${track.reason} grace=${graceFor(uid)} now=$now",
-        )
     }
 
     private fun stopQuietly(packageName: String) {
