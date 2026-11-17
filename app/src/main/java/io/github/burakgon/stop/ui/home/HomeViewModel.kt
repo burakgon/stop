@@ -4,6 +4,7 @@ import android.os.SystemClock
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.burakgon.stop.AppGraph
+import io.github.burakgon.stop.R
 import io.github.burakgon.stop.daemon.RunningApp
 import io.github.burakgon.stop.model.InstalledApp
 import io.github.burakgon.stop.model.RuleMode
@@ -11,7 +12,10 @@ import io.github.burakgon.stop.model.StopEvent
 import io.github.burakgon.stop.model.StopReason
 import io.github.burakgon.stop.ui.dayStarts
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
@@ -53,6 +57,16 @@ class HomeViewModel(private val graph: AppGraph) : ViewModel() {
         }
     }
 
+    init {
+        // The daemon lifts a freeze by itself when the user opens a frozen app. Nothing broadcasts
+        // that back to this process, so re-read the package flags whenever a freeze event lands.
+        viewModelScope.launch {
+            graph.events.recent(RECENT_COUNT).collect { events ->
+                if (events.any { it.reason.isFreeze }) graph.apps.refresh()
+            }
+        }
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     private val today = dayStarts().flatMapLatest { graph.events.since(it) }
 
@@ -83,6 +97,10 @@ class HomeViewModel(private val graph: AppGraph) : ViewModel() {
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), State())
 
+    /** One-shot messages (string resources) the screen shows as a toast. */
+    private val _messages = MutableSharedFlow<Int>(extraBufferCapacity = 4)
+    val messages: SharedFlow<Int> = _messages.asSharedFlow()
+
     fun decide(packageName: String, mode: RuleMode) {
         viewModelScope.launch { graph.decide(listOf(packageName), mode) }
     }
@@ -93,6 +111,34 @@ class HomeViewModel(private val graph: AppGraph) : ViewModel() {
 
     fun stopAll() {
         viewModelScope.launch { graph.daemon.call { it.stopAllBlocked() } }
+    }
+
+    /** Kills the process now, ignoring rules, grace periods and the work mode. */
+    fun forceStop(packageName: String) {
+        viewModelScope.launch {
+            val stopped = graph.daemon.call { it.forceStopNow(packageName) }
+            if (stopped != true) notify(R.string.toast_force_stop_failed)
+        }
+    }
+
+    /** Suspends the app (cannot run, icon greyed out) without making it a permanent freeze. */
+    fun suspend(packageName: String) {
+        viewModelScope.launch {
+            val suspended = graph.daemon.call { it.suspendNow(packageName) }
+            if (suspended != true) notify(R.string.toast_suspend_failed)
+        }
+    }
+
+    /** Permanent freeze (work-mode independent), or the matching restore. */
+    fun setFrozen(packageName: String, frozen: Boolean) {
+        viewModelScope.launch {
+            val ok = graph.daemon.call { it.setFrozen(packageName, frozen) }
+            if (ok != true) notify(R.string.toast_freeze_failed)
+        }
+    }
+
+    private fun notify(message: Int) {
+        _messages.tryEmit(message)
     }
 
     private companion object {

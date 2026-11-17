@@ -1,6 +1,7 @@
 package io.github.burakgon.stop.ui.home
 
 import android.os.SystemClock
+import android.widget.Toast
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
@@ -42,10 +43,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -75,6 +78,12 @@ fun HomeScreen(
     val viewModel = graphViewModel { HomeViewModel(it) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val protection by main.protection.collectAsStateWithLifecycle()
+
+    // Failures of the per-app buttons (protected packages, refused suspends) surface here.
+    val context = LocalContext.current
+    LaunchedEffect(viewModel) {
+        viewModel.messages.collect { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
+    }
 
     val statusBar = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     LazyColumn(
@@ -154,7 +163,15 @@ fun HomeScreen(
                         }
                         state.running.forEachIndexed { index, running ->
                             if (index > 0) GroupDivider()
-                            RunningRow(running, now, onStop = { viewModel.stopNow(running.packageName) })
+                            RunningRow(
+                                running = running,
+                                now = now,
+                                frozen = running.app?.enabled == false || running.app?.suspended == true,
+                                onForceStop = { viewModel.forceStop(running.packageName) },
+                                onSuspend = { viewModel.suspend(running.packageName) },
+                                onFreeze = { viewModel.setFrozen(running.packageName, true) },
+                                onRestore = { viewModel.setFrozen(running.packageName, false) },
+                            )
                         }
                     }
                 }
@@ -250,28 +267,64 @@ private fun UndecidedRow(packageName: String, label: String, onBlock: () -> Unit
 }
 
 @Composable
-private fun RunningRow(running: HomeViewModel.Running, now: Long, onStop: () -> Unit) {
+private fun RunningRow(
+    running: HomeViewModel.Running,
+    now: Long,
+    frozen: Boolean,
+    onForceStop: () -> Unit,
+    onSuspend: () -> Unit,
+    onFreeze: () -> Unit,
+    onRestore: () -> Unit,
+) {
     val status = when {
+        frozen -> stringResource(R.string.running_frozen)
         running.inUse -> stringResource(R.string.running_in_use)
         running.stopsAt != null && running.stopsAt > now -> stringResource(R.string.running_stops_in, countdownLabel(running.stopsAt - now))
         running.stopsAt != null -> stringResource(R.string.running_stopping)
         else -> stringResource(R.string.running_in_use)
     }
-    ListItem(
-        colors = ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
-        leadingContent = { AppIcon(running.packageName, size = 40.dp) },
-        headlineContent = {
-            Text(running.app?.label ?: running.packageName, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        },
-        supportingContent = {
-            Text(status, color = if (running.inUse) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary)
-        },
-        trailingContent = {
-            IconButton(onClick = onStop) {
-                Icon(Icons.Rounded.Block, contentDescription = stringResource(R.string.action_stop_now))
+    Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            AppIcon(running.packageName, size = 40.dp)
+            Spacer(Modifier.width(16.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    running.app?.label ?: running.packageName,
+                    style = MaterialTheme.typography.bodyLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    status,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (frozen || !running.inUse) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
-        },
-    )
+        }
+        Spacer(Modifier.height(10.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(start = 56.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            RunningAction(stringResource(R.string.action_force_stop), onForceStop)
+            if (frozen) {
+                RunningAction(stringResource(R.string.action_restore), onRestore)
+            } else {
+                RunningAction(stringResource(R.string.action_suspend), onSuspend)
+                RunningAction(stringResource(R.string.action_freeze), onFreeze)
+            }
+        }
+    }
+}
+
+@Composable
+private fun RunningAction(label: String, onClick: () -> Unit) {
+    OutlinedButton(
+        onClick = onClick,
+        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+    ) {
+        Text(label, style = MaterialTheme.typography.labelLarge)
+    }
 }
 
 @Composable

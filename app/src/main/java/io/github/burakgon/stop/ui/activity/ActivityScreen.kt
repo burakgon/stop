@@ -153,6 +153,7 @@ fun ActivityScreen(contentPadding: PaddingValues, darkTheme: Boolean) {
                                             Filter.WOKE -> R.string.filter_woke
                                             Filter.LEFT -> R.string.filter_left
                                             Filter.MANUAL -> R.string.filter_manual
+                                            Filter.FROZEN -> R.string.filter_frozen
                                         }
                                     )
                                 )

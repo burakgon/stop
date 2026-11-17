@@ -12,6 +12,7 @@ import androidx.datastore.preferences.preferencesDataStoreFile
 import io.github.burakgon.stop.model.AppSettings
 import io.github.burakgon.stop.model.RuleMode
 import io.github.burakgon.stop.model.ThemeMode
+import io.github.burakgon.stop.model.WorkMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
@@ -30,6 +31,7 @@ class SettingsRepository(context: Context) {
             val next = transform(prefs.toSettings())
             prefs[ONBOARDED] = next.onboarded
             prefs[ENABLED] = next.protectionEnabled
+            prefs[WORK_MODE] = next.workMode.name
             prefs[GRACE_SECONDS] = next.graceSeconds
             prefs[ALLOW_ONGOING] = next.allowOngoing
             prefs[ASK_ON_INSTALL] = next.askOnInstall
@@ -46,6 +48,7 @@ class SettingsRepository(context: Context) {
         return AppSettings(
             onboarded = this[ONBOARDED] ?: defaults.onboarded,
             protectionEnabled = this[ENABLED] ?: defaults.protectionEnabled,
+            workMode = this[WORK_MODE]?.let { WorkMode.fromName(it) } ?: defaults.workMode,
             graceSeconds = this[GRACE_SECONDS] ?: defaults.graceSeconds,
             allowOngoing = this[ALLOW_ONGOING] ?: defaults.allowOngoing,
             askOnInstall = this[ASK_ON_INSTALL] ?: defaults.askOnInstall,
@@ -60,6 +63,7 @@ class SettingsRepository(context: Context) {
     private companion object {
         val ONBOARDED = booleanPreferencesKey("onboarded")
         val ENABLED = booleanPreferencesKey("protection_enabled")
+        val WORK_MODE = stringPreferencesKey("work_mode")
         val GRACE_SECONDS = intPreferencesKey("grace_seconds")
         val ALLOW_ONGOING = booleanPreferencesKey("allow_ongoing")
         val ASK_ON_INSTALL = booleanPreferencesKey("ask_on_install")

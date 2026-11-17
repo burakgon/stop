@@ -1,0 +1,332 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">自动暂停</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">首页</string>
+    <string name="nav_apps">应用</string>
+    <string name="nav_activity">活动</string>
+    <string name="nav_settings">设置</string>
+
+    <!-- Protection status -->
+    <string name="status_active_title">保护已开启</string>
+    <plurals name="status_active_body">
+        <item quantity="other">%d 个应用只在你使用时运行</item>
+    </plurals>
+    <string name="status_active_none">还没有限制任何应用。可在「应用」里选择。</string>
+    <string name="status_starting_title">正在启动保护…</string>
+    <string name="status_starting_body">正在连接 Shizuku</string>
+    <string name="status_paused_title">保护已暂停</string>
+    <string name="status_paused_body">恢复之前，已限制的应用可以在后台运行。</string>
+    <string name="status_not_running_title">Shizuku 未运行</string>
+    <string name="status_not_running_body">启动 Shizuku 以继续保护。在此之前，你还没打开过的已限制应用会保持休眠。</string>
+    <string name="status_not_installed_title">需要 Shizuku</string>
+    <string name="status_not_installed_body">Stop 借助 Shizuku 来停止其他应用。请安装并启动一次。</string>
+    <string name="status_permission_title">在 Shizuku 中允许 Stop</string>
+    <string name="status_permission_body">Shizuku 会询问一次是否允许 Stop 使用它。</string>
+    <string name="status_permission_denied_body">Stop 的访问权限被拒绝。请在 Shizuku 应用的「已授权应用」中允许它。</string>
+    <string name="status_outdated_title">Shizuku 版本过旧</string>
+    <string name="status_outdated_body">请把 Shizuku 更新到 11 或更高版本。</string>
+    <string name="status_error_title">保护无法启动</string>
+    <string name="mode_adb">Shizuku · ADB</string>
+    <string name="mode_root">Shizuku · root</string>
+
+    <!-- Common actions -->
+    <string name="action_pause">暂停</string>
+    <string name="action_resume">恢复</string>
+    <string name="action_open_shizuku">打开 Shizuku</string>
+    <string name="action_get_shizuku">获取 Shizuku</string>
+    <string name="action_grant_access">授予访问权限</string>
+    <string name="action_retry">重试</string>
+    <string name="action_stop_now">立即停止</string>
+    <string name="action_force_stop">强制停止</string>
+    <string name="action_suspend">挂起</string>
+    <string name="action_freeze">冻结</string>
+    <string name="action_restore">恢复</string>
+    <string name="action_thaw">解冻</string>
+    <string name="action_unsuspend">解挂</string>
+    <string name="action_stop_all">全部停止</string>
+    <string name="action_see_all">查看全部</string>
+    <string name="action_open">打开</string>
+    <string name="action_app_info">应用信息</string>
+    <string name="action_continue">继续</string>
+    <string name="action_skip">跳过</string>
+    <string name="action_done">完成</string>
+    <string name="action_cancel">取消</string>
+    <string name="action_get_started">开始使用</string>
+    <string name="action_allow_notifications">允许通知</string>
+    <string name="action_decide_later">稍后决定</string>
+    <string name="action_search">搜索</string>
+    <string name="action_close_search">关闭搜索</string>
+    <string name="action_more">更多选项</string>
+
+    <!-- Home -->
+    <string name="stat_stops_today">今日已停止</string>
+    <string name="stat_wakeups_today">次唤醒被拦截</string>
+    <string name="stat_blocked_apps">个应用受限</string>
+    <string name="home_needs_decision">等待你决定</string>
+    <string name="home_new_app">刚安装</string>
+    <string name="home_running">正在运行</string>
+    <string name="home_running_empty">没有已限制的应用在运行。</string>
+    <string name="running_in_use">使用中</string>
+    <string name="running_frozen">已冻结</string>
+    <string name="toast_force_stop_failed">这个包被保护，无法强制停止</string>
+    <string name="toast_suspend_failed">系统拒绝挂起这个包</string>
+    <string name="toast_freeze_failed">无法冻结这个包</string>
+    <string name="running_stops_in">%1$s 后停止</string>
+    <string name="running_stopping">正在停止…</string>
+    <string name="home_recent">最近活动</string>
+    <string name="home_recent_empty">还没有停止记录。已限制的应用尝试在后台运行时，会出现在这里。</string>
+
+    <!-- Stop reasons -->
+    <string name="reason_woke">自行唤醒</string>
+    <string name="reason_left">离开后仍在运行</string>
+    <string name="reason_running">在后台运行</string>
+    <string name="reason_manual">被你手动停止</string>
+    <string name="reason_tapped">冻结期间被点开</string>
+    <string name="reason_freeze">已永久冻结</string>
+    <string name="reason_thaw">已恢复</string>
+
+    <!-- Time and durations -->
+    <string name="time_just_now">刚刚</string>
+    <string name="time_minutes_ago">%d 分钟前</string>
+    <string name="time_hours_ago">%d 小时前</string>
+    <string name="time_today">今天</string>
+    <string name="time_yesterday">昨天</string>
+    <string name="duration_seconds">%d 秒</string>
+    <string name="duration_minutes">%d 分钟</string>
+    <string name="duration_hours">%d 小时</string>
+    <string name="grace_immediately">立即</string>
+
+    <!-- Apps -->
+    <string name="apps_title">应用</string>
+    <string name="apps_search_hint">搜索应用</string>
+    <string name="filter_all">全部</string>
+    <string name="filter_blocked">已限制</string>
+    <string name="filter_frozen">已冻结</string>
+    <string name="filter_suspended">已挂起</string>
+    <string name="filter_allowed">已允许</string>
+    <string name="filter_new">新增</string>
+    <string name="apps_hint">已开启限制的应用，在你离开后会立即被停止。</string>
+    <string name="app_status_blocked">离开后即停止</string>
+    <string name="app_status_frozen">已永久冻结，恢复前不可用</string>
+    <string name="app_status_suspended">已挂起，解挂前不可用</string>
+    <string name="app_status_allowed">可在后台运行</string>
+    <string name="app_status_new_blocked">新增 · 待你决定前保持停止</string>
+    <string name="app_status_new_allowed">新增 · 待你决定前保持允许</string>
+    <string name="app_status_protected">手机运行所需</string>
+    <plurals name="app_status_stops_today">
+        <item quantity="other">今日已停止 %d 次</item>
+    </plurals>
+    <string name="app_status_needed_by_stop">Stop 自身运行需要它</string>
+    <string name="app_system_badge">系统</string>
+    <string name="menu_show_system">显示系统应用</string>
+    <string name="menu_block_shown">在后台停止所有显示的应用</string>
+    <string name="menu_allow_shown">允许所有显示的应用</string>
+    <string name="apps_empty_search">没有匹配「%1$s」的应用</string>
+    <string name="apps_empty_filter">这里什么都没有</string>
+    <plurals name="apps_bulk_confirm_block">
+        <item quantity="other">在后台停止 %d 个应用？</item>
+    </plurals>
+    <plurals name="apps_bulk_confirm_allow">
+        <item quantity="other">允许 %d 个应用在后台运行？</item>
+    </plurals>
+    <string name="apps_bulk_confirm">应用</string>
+
+    <!-- App details -->
+    <string name="detail_mode_block">后台停止</string>
+    <string name="detail_mode_allow">允许运行</string>
+    <string name="detail_mode_block_hint">仅在你使用时运行。它无法自行唤醒，Play 商店的更新照常可用。</string>
+    <string name="detail_mode_allow_hint">可以在后台运行、同步并发送通知。</string>
+    <string name="detail_grace_title">离开后的宽限期</string>
+    <string name="detail_grace_default">默认 · %1$s</string>
+    <string name="detail_protected">你的手机需要这个应用，Stop 不会动它。</string>
+    <string name="detail_integration_accessibility">它运行着你已开启的无障碍服务，因此 Stop 会保持它运行。</string>
+    <string name="detail_integration_notification_listener">它会读取你的通知（例如同步到手表），因此 Stop 会保持它运行。</string>
+    <string name="detail_integration_autofill">它负责填充密码，因此 Stop 会保持它运行。</string>
+    <string name="detail_integration_alarm_clock">它负责响闹钟。停止它会删除闹钟，因此 Stop 会保持它运行。</string>
+    <string name="detail_integration_device_admin">此应用是设备管理器。停止它可能导致查找手机、锁定手机等功能失效。</string>
+    <string name="detail_integration_wallpaper">此应用在绘制你的动态壁纸，应用被停止时壁纸也会停止。</string>
+    <string name="detail_activity">活动</string>
+    <plurals name="detail_stops_today">
+        <item quantity="other">今日已停止 %d 次</item>
+    </plurals>
+    <plurals name="detail_stops_week">
+        <item quantity="other">最近 7 天 %d 次</item>
+    </plurals>
+    <string name="detail_never_stopped">最近 30 天没有被停止</string>
+
+    <!-- Activity -->
+    <string name="activity_title">活动</string>
+    <string name="activity_week_title">最近 7 天</string>
+    <plurals name="activity_week_total">
+        <item quantity="other">%d 次停止</item>
+    </plurals>
+    <string name="filter_woke">自行唤醒</string>
+    <string name="filter_left">离开之后</string>
+    <string name="filter_manual">手动停止</string>
+    <string name="activity_empty_title">还没有停止记录</string>
+    <string name="activity_empty_body">已限制的应用尝试在后台运行时，会出现在这里。</string>
+    <string name="menu_clear_history">清除历史</string>
+    <string name="activity_repeat">×%d</string>
+    <string name="activity_chart_description">最近 7 天每天的停止次数</string>
+
+    <!-- Settings -->
+    <string name="settings_title">设置</string>
+    <string name="settings_section_protection">保护</string>
+    <string name="settings_protection">停止已限制的应用</string>
+    <string name="settings_protection_on">离开时，以及它们试图自行运行时</string>
+    <string name="settings_protection_off">已暂停。已限制的应用可以在后台运行。</string>
+    <string name="settings_grace">宽限期</string>
+    <string name="settings_grace_summary">离开后，已限制的应用还可以继续运行 %1$s</string>
+    <string name="settings_grace_summary_none">离开后，已限制的应用会立即被停止</string>
+    <string name="settings_grace_dialog_body">留一小段宽限期，方便你切到相机之类的应用再切回来，不会丢失当前进度。</string>
+    <string name="settings_ongoing">让进行中的任务先完成</string>
+    <string name="settings_ongoing_summary">当已限制的应用显示常驻通知时（如音乐、导航、充电），允许它继续运行</string>
+    <string name="settings_section_new_apps">新应用</string>
+    <string name="settings_ask">询问新安装的应用</string>
+    <string name="settings_ask_summary">每次安装应用时收到通知</string>
+    <string name="settings_new_default">在你决定之前</string>
+    <string name="settings_new_default_block">新应用默认在后台被停止</string>
+    <string name="settings_new_default_allow">新应用默认可以在后台运行</string>
+    <string name="settings_notifications_off">通知已关闭，Stop 无法询问你。点按以允许通知。</string>
+    <string name="settings_section_extra">额外限制</string>
+    <string name="settings_extra">同时限制电池用量</string>
+    <string name="settings_extra_summary">在 Android 的电池设置中把已限制的应用标记为「受限」，这样即使 Shizuku 没在运行，限制也依然生效。部分手机上，受限应用的 Play 商店更新会延后。</string>
+    <string name="settings_section_appearance">外观</string>
+    <string name="settings_theme">主题</string>
+    <string name="theme_system">跟随系统</string>
+    <string name="theme_light">浅色</string>
+    <string name="theme_dark">深色</string>
+    <string name="settings_dynamic_color">动态取色</string>
+    <string name="settings_dynamic_color_summary">使用壁纸中的颜色</string>
+    <string name="settings_section_shizuku">Shizuku</string>
+    <string name="settings_shizuku_status">状态</string>
+    <string name="shizuku_connected_adb">已以 ADB 模式连接</string>
+    <string name="shizuku_connected_root">已以 root 模式连接</string>
+    <string name="settings_service">Stop 服务</string>
+    <string name="settings_service_running">自 %1$s 起运行中</string>
+    <string name="settings_service_not_running">未运行</string>
+    <string name="settings_section_maintenance">维护</string>
+    <string name="settings_reset">撤销所有限制</string>
+    <string name="settings_reset_summary">让所有应用重新可以在后台运行，并忘记你的选择</string>
+    <string name="settings_reset_confirm_title">撤销所有限制？</string>
+    <string name="settings_reset_confirm_body">所有应用都会重新被允许在后台运行，Stop 也会忘记你限制过哪些应用。请在卸载 Stop 之前执行这一步。</string>
+    <string name="settings_reset_confirm">全部撤销</string>
+    <string name="settings_reset_done">所有限制已移除</string>
+    <string name="settings_clear_history">清除活动历史</string>
+    <string name="settings_clear_history_done">历史已清除</string>
+    <string name="settings_section_about">关于</string>
+    <string name="settings_version">版本</string>
+    <string name="settings_source">源代码</string>
+    <string name="settings_source_summary">github.com/burakgon/stop</string>
+    <string name="settings_license">许可证</string>
+    <string name="settings_license_summary">GNU 通用公共许可证 v3.0</string>
+    <string name="settings_privacy">隐私</string>
+    <string name="settings_privacy_summary">Stop 没有网络访问权限，任何数据都不会离开你的手机。</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_welcome_title">应用只在你打开时运行</string>
+    <string name="onboarding_welcome_body">你选中的应用，用完后 Stop 会立刻关闭，并阻止它们自行唤醒。</string>
+    <string name="onboarding_feature_sleep_title">在你打开前保持休眠</string>
+    <string name="onboarding_feature_sleep_body">已限制的应用无法为了闹钟、后台任务或推送消息自行启动。</string>
+    <string name="onboarding_feature_leave_title">离开时关闭</string>
+    <string name="onboarding_feature_leave_body">经过一小段宽限期后，已限制的应用会被彻底停止，而不是仅仅切到后台。</string>
+    <string name="onboarding_feature_updates_title">更新不受影响</string>
+    <string name="onboarding_feature_updates_body">应用不会被禁用或隐藏，Play 商店仍会照常更新它们。</string>
+    <string name="onboarding_shizuku_title">连接 Shizuku</string>
+    <string name="onboarding_shizuku_body">Android 只允许系统停止其他应用。Shizuku 让 Stop 无需 root 也能获得这个能力。</string>
+    <string name="onboarding_shizuku_ready">Shizuku 已就绪</string>
+    <string name="onboarding_shizuku_uses">Stop 只把它用于</string>
+    <string name="onboarding_shizuku_use_running">查看哪些应用在运行</string>
+    <string name="onboarding_shizuku_use_stop">停止你限制的应用</string>
+    <string name="onboarding_shizuku_use_installs">感知你安装了新应用</string>
+    <string name="onboarding_notification_example_app">Charge Map</string>
+    <string name="onboarding_notification_example_time">刚刚</string>
+    <string name="onboarding_shizuku_how">怎么启动 Shizuku？</string>
+    <string name="onboarding_shizuku_steps">1. 打开 Shizuku，按它的指引完成无线调试。\n2. 点按「启动」。Shizuku 一运行，Stop 就会自动识别。\n3. 每次重启手机后都要重新启动 Shizuku。在此之前，已限制的应用会保持休眠。</string>
+    <string name="onboarding_notifications_title">新应用安装后询问你</string>
+    <string name="onboarding_notifications_body">每次安装应用时，Stop 都会询问它是否可以在后台运行。这需要通知权限。</string>
+    <string name="onboarding_choose_title">哪些应用可以在后台运行？</string>
+    <string name="onboarding_choose_body">选择你依赖的消息、通话、音乐或导航类应用。其余应用在你离开后都会被停止。</string>
+    <string name="onboarding_suggested">推荐</string>
+    <string name="onboarding_allow_all">全部允许</string>
+    <string name="onboarding_block_all">全部限制</string>
+    <string name="onboarding_allow_shown">允许这些</string>
+    <string name="onboarding_block_shown">限制这些</string>
+    <plurals name="onboarding_summary">
+        <item quantity="other">%d 个应用将在后台被停止</item>
+    </plurals>
+    <string name="onboarding_step">第 %1$d 步，共 %2$d 步</string>
+
+    <!-- New app prompt -->
+    <string name="new_app_title">已安装 %1$s</string>
+    <string name="new_app_body">不使用它时，是否要停止它？</string>
+    <string name="new_app_missing">此应用已被卸载。</string>
+
+    <!-- Quick Settings tile and launcher shortcut -->
+    <string name="tile_label">停止应用</string>
+    <string name="tile_subtitle_ready">点按以停止已限制的应用</string>
+    <string name="tile_subtitle_paused">已暂停</string>
+    <string name="shortcut_stop_all_short">立即停止应用</string>
+    <string name="shortcut_stop_all_long">立即停止已限制的应用</string>
+    <string name="stop_all_unavailable">Stop 当前无法连接 Shizuku</string>
+    <string name="stop_all_none">没有已限制的应用在运行</string>
+    <plurals name="stop_all_result">
+        <item quantity="other">已停止 %d 个应用</item>
+    </plurals>
+
+    <!-- Notifications -->
+    <string name="channel_new_apps">新应用</string>
+    <string name="channel_new_apps_description">询问如何处理你刚安装的应用</string>
+    <string name="channel_status">保护状态</string>
+    <string name="channel_status_description">当 Shizuku 未运行导致保护暂停时通知你</string>
+    <string name="new_app_notification_title">已安装 %1$s</string>
+    <string name="new_app_notification_text">在后台停止它，还是允许它运行？</string>
+    <string name="new_app_notification_long">在后台停止它，还是允许它运行？被停止的应用只在你使用时运行，无法自行唤醒，Play 商店的更新照常可用。</string>
+    <string name="action_stop_in_background">后台停止</string>
+    <string name="action_let_it_run">允许运行</string>
+    <plurals name="new_apps_summary_title">
+        <item quantity="other">已安装 %d 个新应用</item>
+    </plurals>
+    <string name="new_apps_summary_text">选择哪些可以在后台运行。</string>
+    <string name="paused_notification_title">保护已暂停</string>
+    <string name="paused_notification_text">Shizuku 未运行。请重新启动它，以便 Stop 继续阻止已限制的应用在后台运行。</string>
+    <!-- 工作模式：被限制的应用用哪种方式冻结（都走 Shizuku）。 -->
+    <string name="work_mode_title">工作模式</string>
+    <string name="work_mode_body">Stop 用哪种方式处理被限制的应用，全部通过 Shizuku 执行。强行停止只是杀掉进程，应用随时能再打开；强停挂起在杀进程前先挂起（pm suspend），应用无法自行在后台起来，点开时由系统拦下；永久冻结会一直挂着（必要时退回停用），要你手动解冻才能再用。</string>
+    <string name="mode_idle">空闲 · 仅额外限制</string>
+    <string name="mode_stop">Shizuku · 强行停止</string>
+    <string name="mode_suspend_stop">Shizuku · 强停挂起</string>
+    <string name="mode_freeze">Shizuku · 永久冻结</string>
+    <string name="bloatware_title">预装应用清理</string>
+    <string name="bloatware_close">关闭</string>
+    <string name="bloatware_summary">清单按索尼 XQ-FS72（Android 15）的实测审计分档：A 档是没人依赖的后台预装，可放心冻结；B 档有图标或与某项功能耦合，确认自己不用再冻；C 档是框架、常驻进程、通信与 GMS，不要动。冻结走 pm suspend，图标保留但变灰，点开会提示已被 Stop 冻结。</string>
+    <string name="bloatware_tier_a">A 可安全</string>
+    <string name="bloatware_tier_b">B 按需</string>
+    <string name="bloatware_tier_c">C 别碰</string>
+    <string name="bloatware_freeze_selected">冻结所选（%1$d）</string>
+    <string name="bloatware_thaw_selected">解冻所选（%1$d）</string>
+    <string name="bloatware_frozen_note">已冻结 · %1$s</string>
+    <string name="bloatware_empty">这台设备上没有清单里的应用</string>
+    <string name="bloatware_done_frozen">已冻结 %1$d 个应用</string>
+    <string name="bloatware_done_thawed">已解冻 %1$d 个应用</string>
+    <string name="bloatware_need_shizuku">Shizuku 未运行，无法冻结</string>
+    <string name="settings_bloatware">批量冻结预装应用</string>
+    <string name="settings_bloatware_summary">按审计分档批量冻结 / 解冻后台预装应用。</string>
+    <string name="freeze_suspend_dialog">已被「自动暂停」挂起：点一下就能打开，离开后 自动暂停 会继续挡住它的后台。</string>
+    <string name="shortcut_create_title">创建冻结快捷方式</string>
+    <string name="shortcut_create_body">把这个应用自己的图标放到桌面上，点击即可冻结 / 解冻，图标右下角标记当前状态。被冻结的应用会从桌面消失，这个快捷方式是它唯一的入口。</string>
+    <string name="shortcut_create_confirm">创建</string>
+    <string name="shortcut_pin_requested">已请求创建快捷方式，请在桌面的提示里确认</string>
+    <string name="shortcut_pin_unsupported">当前桌面不支持固定快捷方式</string>
+    <string name="shortcut_frozen">已冻结 %1$s</string>
+    <string name="shortcut_thawed">已解冻 %1$s</string>
+    <string name="shortcut_failed">无法操作 %1$s，Shizuku 可能已断开</string>
+    <string name="shortcut_need_shizuku">Shizuku 未运行，无法冻结</string>
+    <string name="shortcut_long_frozen">%1$s · 已冻结</string>
+    <string name="shortcut_long_active">%1$s · 可运行</string>
+    <string name="settings_restore_frozen">恢复被冻结的应用</string>
+    <string name="settings_restore_frozen_summary">把被停用、隐藏或暂停的应用恢复成可用，限制规则不变。</string>
+    <string name="settings_restore_frozen_done">已恢复被冻结的应用</string>
+</resources>

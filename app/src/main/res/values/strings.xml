@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Stop</string>
+    <string name="app_name">Auto Pause</string>
 
     <!-- Navigation -->
     <string name="nav_home">Home</string>
@@ -40,6 +40,12 @@
     <string name="action_grant_access">Grant access</string>
     <string name="action_retry">Try again</string>
     <string name="action_stop_now">Stop now</string>
+    <string name="action_force_stop">Force stop</string>
+    <string name="action_suspend">Suspend</string>
+    <string name="action_freeze">Freeze</string>
+    <string name="action_restore">Restore</string>
+    <string name="action_thaw">Thaw</string>
+    <string name="action_unsuspend">Unsuspend</string>
     <string name="action_stop_all">Stop all</string>
     <string name="action_see_all">See all</string>
     <string name="action_open">Open</string>
@@ -64,6 +70,10 @@
     <string name="home_running">Running now</string>
     <string name="home_running_empty">No blocked apps are running.</string>
     <string name="running_in_use">In use</string>
+    <string name="running_frozen">Frozen</string>
+    <string name="toast_force_stop_failed">This package is protected and cannot be force-stopped</string>
+    <string name="toast_suspend_failed">The system refused to suspend this package</string>
+    <string name="toast_freeze_failed">Could not freeze this package</string>
     <string name="running_stops_in">Stops in %1$s</string>
     <string name="running_stopping">Stopping…</string>
     <string name="home_recent">Recent activity</string>
@@ -74,6 +84,9 @@
     <string name="reason_left">Kept running after you left</string>
     <string name="reason_running">Was running in the background</string>
     <string name="reason_manual">Stopped by you</string>
+    <string name="reason_tapped">Tried to open while frozen</string>
+    <string name="reason_freeze">Permanently frozen</string>
+    <string name="reason_thaw">Restored</string>
 
     <!-- Time and durations -->
     <string name="time_just_now">Just now</string>
@@ -91,10 +104,14 @@
     <string name="apps_search_hint">Search apps</string>
     <string name="filter_all">All</string>
     <string name="filter_blocked">Stopped</string>
+    <string name="filter_frozen">Frozen</string>
+    <string name="filter_suspended">Suspended</string>
     <string name="filter_allowed">Allowed</string>
     <string name="filter_new">New</string>
     <string name="apps_hint">Apps that are switched on are stopped whenever you leave them.</string>
     <string name="app_status_blocked">Stopped when you leave it</string>
+    <string name="app_status_frozen">Frozen until you restore it</string>
+    <string name="app_status_suspended">Suspended, not usable until you lift it</string>
     <string name="app_status_allowed">Can run in the background</string>
     <string name="app_status_new_blocked">New · stopped until you decide</string>
     <string name="app_status_new_allowed">New · allowed until you decide</string>
@@ -285,4 +302,41 @@
     <string name="new_apps_summary_text">Choose which ones may run in the background.</string>
     <string name="paused_notification_title">Protection is paused</string>
     <string name="paused_notification_text">Shizuku isn\'t running. Start it again so Stop can keep blocked apps from running in the background.</string>
+    <!-- Work mode: how a blocked app gets frozen (Shizuku). -->
+    <string name="work_mode_title">Work mode</string>
+    <string name="work_mode_body">How Stop handles a blocked app, all through Shizuku. Force stop only kills it, so it can start again. Force stop + suspend stops it and suspends it (pm suspend) so it cannot come back on its own. Permanent freeze keeps it suspended (falling back to disabling) until you restore it by hand.</string>
+    <string name="mode_idle">Idle · restrictions only</string>
+    <string name="mode_stop">Shizuku · force stop</string>
+    <string name="mode_suspend_stop">Shizuku · force stop + suspend</string>
+    <string name="mode_freeze">Shizuku · permanent freeze</string>
+    <string name="bloatware_title">Preinstalled cleanup</string>
+    <string name="bloatware_close">Close</string>
+    <string name="bloatware_summary">Tiers come from an audit run on a Sony XQ-FS72 (Android 15): A is backend-only preinstalled apps nobody relies on, safe to freeze; B has an icon or a coupled feature, freeze only if you do not use it; C is framework, persistent processes, telephony and GMS — leave it alone. Freezing uses pm suspend, so the icon stays (greyed out) and tapping it explains why the app will not start.</string>
+    <string name="bloatware_tier_a">A safe</string>
+    <string name="bloatware_tier_b">B ask first</string>
+    <string name="bloatware_tier_c">C do not touch</string>
+    <string name="bloatware_freeze_selected">Freeze selected (%1$d)</string>
+    <string name="bloatware_thaw_selected">Unfreeze selected (%1$d)</string>
+    <string name="bloatware_frozen_note">Frozen · %1$s</string>
+    <string name="bloatware_empty">None of the listed apps is installed on this device</string>
+    <string name="bloatware_done_frozen">Froze %1$d apps</string>
+    <string name="bloatware_done_thawed">Unfroze %1$d apps</string>
+    <string name="bloatware_need_shizuku">Shizuku is not running, cannot freeze</string>
+    <string name="settings_bloatware">Batch freeze preinstalled apps</string>
+    <string name="settings_bloatware_summary">Freeze or unfreeze backend preinstalled apps by audit tier.</string>
+    <string name="freeze_suspend_dialog">Held back by Auto Pause. Tap to open it now — Auto Pause keeps it off the background once you leave.</string>
+    <string name="shortcut_create_title">Create freeze shortcut</string>
+    <string name="shortcut_create_body">Puts this app\'s own icon on the home screen. Tap it to freeze or unfreeze the app; the badge shows the current state. Handy because a frozen app disappears from the launcher.</string>
+    <string name="shortcut_create_confirm">Create</string>
+    <string name="shortcut_pin_requested">Shortcut requested — confirm it in the launcher prompt</string>
+    <string name="shortcut_pin_unsupported">This launcher cannot pin shortcuts</string>
+    <string name="shortcut_frozen">%1$s frozen</string>
+    <string name="shortcut_thawed">%1$s unfrozen</string>
+    <string name="shortcut_failed">Could not change %1$s — is Shizuku still running?</string>
+    <string name="shortcut_need_shizuku">Shizuku is not running, cannot freeze</string>
+    <string name="shortcut_long_frozen">%1$s · frozen</string>
+    <string name="shortcut_long_active">%1$s · usable</string>
+    <string name="settings_restore_frozen">Restore frozen apps</string>
+    <string name="settings_restore_frozen_summary">Make apps frozen with disable, hide or suspend usable again. Rules stay as they are.</string>
+    <string name="settings_restore_frozen_done">Frozen apps restored</string>
 </resources>

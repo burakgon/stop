@@ -38,10 +38,10 @@ class InstalledApps(private val context: Context) {
     private fun load(): Map<String, InstalledApp> {
         val launchable = launchablePackages()
         val packages = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            pm.getInstalledPackages(PackageManager.PackageInfoFlags.of(0))
+            pm.getInstalledPackages(PackageManager.PackageInfoFlags.of(PackageManager.MATCH_DISABLED_COMPONENTS.toLong()))
         } else {
             @Suppress("DEPRECATION")
-            pm.getInstalledPackages(0)
+            pm.getInstalledPackages(PackageManager.MATCH_DISABLED_COMPONENTS)
         }
         return packages.mapNotNull { pkg ->
             val info = pkg.applicationInfo ?: return@mapNotNull null
@@ -53,6 +53,8 @@ class InstalledApps(private val context: Context) {
                 isLaunchable = pkg.packageName in launchable,
                 category = info.category,
                 firstInstallTime = pkg.firstInstallTime,
+                enabled = info.enabled,
+                suspended = info.flags and ApplicationInfo.FLAG_SUSPENDED != 0,
             )
         }.toMap()
     }
@@ -60,10 +62,13 @@ class InstalledApps(private val context: Context) {
     private fun launchablePackages(): Set<String> {
         val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
         val activities = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            pm.queryIntentActivities(intent, PackageManager.ResolveInfoFlags.of(PackageManager.MATCH_ALL.toLong()))
+            pm.queryIntentActivities(
+                intent,
+                PackageManager.ResolveInfoFlags.of((PackageManager.MATCH_ALL or PackageManager.MATCH_DISABLED_COMPONENTS).toLong()),
+            )
         } else {
             @Suppress("DEPRECATION")
-            pm.queryIntentActivities(intent, PackageManager.MATCH_ALL)
+            pm.queryIntentActivities(intent, PackageManager.MATCH_ALL or PackageManager.MATCH_DISABLED_COMPONENTS)
         }
         return activities.mapTo(HashSet()) { it.activityInfo.packageName }
     }

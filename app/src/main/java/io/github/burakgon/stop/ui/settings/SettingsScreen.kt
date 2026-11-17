@@ -61,6 +61,8 @@ import io.github.burakgon.stop.core.ShizukuMonitor
 import io.github.burakgon.stop.model.GracePeriods
 import io.github.burakgon.stop.model.RuleMode
 import io.github.burakgon.stop.model.ThemeMode
+import io.github.burakgon.stop.ui.bloatware.BloatwareActivity
+import io.github.burakgon.stop.model.WorkMode
 import io.github.burakgon.stop.ui.components.openShizuku
 import io.github.burakgon.stop.ui.durationLabel
 import io.github.burakgon.stop.ui.graphViewModel
@@ -83,6 +85,7 @@ fun SettingsScreen(contentPadding: PaddingValues) {
     val notificationsOn = remember(lifecycle) { NotificationManagerCompat.from(context).areNotificationsEnabled() }
     val historyCleared = stringResource(R.string.settings_clear_history_done)
     val restrictionsUndone = stringResource(R.string.settings_reset_done)
+    val frozenRestored = stringResource(R.string.settings_restore_frozen_done)
     val s = settings ?: return
 
     Scaffold(
@@ -105,6 +108,13 @@ fun SettingsScreen(contentPadding: PaddingValues) {
                     summary = stringResource(if (s.protectionEnabled) R.string.settings_protection_on else R.string.settings_protection_off),
                     checked = s.protectionEnabled,
                     onCheckedChange = { on -> viewModel.update { it.copy(protectionEnabled = on) } },
+                )
+            }
+            item {
+                SettingRow(
+                    title = stringResource(R.string.work_mode_title),
+                    summary = workModeLabel(s.workMode),
+                    onClick = { dialog = Dialog.WORK_MODE },
                 )
             }
             item {
@@ -221,6 +231,20 @@ fun SettingsScreen(contentPadding: PaddingValues) {
             item { Header(stringResource(R.string.settings_section_maintenance)) }
             item {
                 SettingRow(
+                    title = stringResource(R.string.settings_restore_frozen),
+                    summary = stringResource(R.string.settings_restore_frozen_summary),
+                    onClick = { viewModel.restoreFrozen { scope.launch { snackbar.showSnackbar(frozenRestored) } } },
+                )
+            }
+            item {
+                SettingRow(
+                    title = stringResource(R.string.settings_bloatware),
+                    summary = stringResource(R.string.settings_bloatware_summary),
+                    onClick = { context.startActivity(Intent(context, BloatwareActivity::class.java)) },
+                )
+            }
+            item {
+                SettingRow(
                     title = stringResource(R.string.settings_reset),
                     summary = stringResource(R.string.settings_reset_summary),
                     onClick = { dialog = Dialog.RESET },
@@ -255,6 +279,15 @@ fun SettingsScreen(contentPadding: PaddingValues) {
     }
 
     when (dialog) {
+        Dialog.WORK_MODE -> ChoiceDialog(
+            title = stringResource(R.string.work_mode_title),
+            message = stringResource(R.string.work_mode_body),
+            options = WorkMode.entries,
+            selected = s.workMode,
+            label = { workModeLabel(it) },
+            onSelect = { mode -> viewModel.update { it.copy(workMode = mode) } },
+            onDismiss = { dialog = null },
+        )
         Dialog.GRACE -> ChoiceDialog(
             title = stringResource(R.string.settings_grace),
             message = stringResource(R.string.settings_grace_dialog_body),
@@ -298,7 +331,7 @@ fun SettingsScreen(contentPadding: PaddingValues) {
     }
 }
 
-private enum class Dialog { GRACE, NEW_APPS, THEME, RESET }
+private enum class Dialog { WORK_MODE, GRACE, NEW_APPS, THEME, RESET }
 
 private const val SOURCE_URL = "https://github.com/burakgon/stop"
 
@@ -371,6 +404,16 @@ private fun <T> ChoiceDialog(
         confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
     )
 }
+
+@Composable
+private fun workModeLabel(mode: WorkMode): String = stringResource(
+    when (mode) {
+        WorkMode.IDLE -> R.string.mode_idle
+        WorkMode.STOP -> R.string.mode_stop
+        WorkMode.SUSPEND_STOP -> R.string.mode_suspend_stop
+        WorkMode.FREEZE -> R.string.mode_freeze
+    }
+)
 
 private fun themeLabel(mode: ThemeMode) = when (mode) {
     ThemeMode.SYSTEM -> R.string.theme_system

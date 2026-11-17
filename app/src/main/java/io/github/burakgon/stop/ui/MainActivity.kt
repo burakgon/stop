@@ -16,12 +16,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import io.github.burakgon.stop.graph
 import io.github.burakgon.stop.ui.onboarding.OnboardingScreen
 import io.github.burakgon.stop.ui.theme.StopTheme
 import io.github.burakgon.stop.ui.theme.isDarkTheme
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     private val main: MainViewModel by viewModels { viewModelFactory { initializer { MainViewModel(graph) } } }
@@ -69,6 +71,9 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         main.refresh()
+        // Freezing and lifting a freeze change ApplicationInfo flags without a broadcast this app
+        // receives, so a stale snapshot would keep claiming an app is frozen while it runs again.
+        lifecycleScope.launch { graph.apps.refresh() }
     }
 
     companion object {

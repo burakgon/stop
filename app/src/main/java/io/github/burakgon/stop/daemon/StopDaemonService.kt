@@ -38,6 +38,16 @@ class StopDaemonService() : IStopDaemon.Stub() {
 
     override fun resetRestrictions() = daemon.resetRestrictions()
 
+    override fun setFrozen(packageName: String, frozen: Boolean): Boolean = daemon.setFrozen(packageName, frozen)
+
+    override fun forceStopNow(packageName: String): Boolean = daemon.forceStopNow(packageName)
+
+    override fun suspendNow(packageName: String): Boolean = daemon.suspendNow(packageName)
+
+    override fun getFrozen(): String = daemon.frozenPackages()
+
+    override fun getSuspended(packages: String): String = daemon.suspendedPackages(packages)
+
     override fun onTransact(code: Int, data: Parcel, reply: Parcel?, flags: Int): Boolean {
         // Only Stop itself (and Shizuku, which runs as shell or root) may drive the daemon.
         if (code in FIRST_CALL_TRANSACTION..LAST_CALL_TRANSACTION && !daemon.isTrustedCaller(getCallingUid())) {
