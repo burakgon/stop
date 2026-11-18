@@ -166,7 +166,11 @@ fun HomeScreen(
                             RunningRow(
                                 running = running,
                                 now = now,
-                                frozen = running.app?.enabled == false || running.app?.suspended == true,
+                                // Suspension keeps its own flag, so the two states must not be
+                                // collapsed: a suspended app is lifted with "解挂", a disabled one
+                                // with "恢复".
+                                frozen = running.app?.let { !it.enabled && !it.suspended } == true,
+                                suspended = running.app?.suspended == true,
                                 onForceStop = { viewModel.forceStop(running.packageName) },
                                 onSuspend = { viewModel.suspend(running.packageName) },
                                 onFreeze = { viewModel.setFrozen(running.packageName, true) },
@@ -271,6 +275,7 @@ private fun RunningRow(
     running: HomeViewModel.Running,
     now: Long,
     frozen: Boolean,
+    suspended: Boolean,
     onForceStop: () -> Unit,
     onSuspend: () -> Unit,
     onFreeze: () -> Unit,
@@ -278,6 +283,7 @@ private fun RunningRow(
 ) {
     val status = when {
         frozen -> stringResource(R.string.running_frozen)
+        suspended -> stringResource(R.string.running_suspended)
         running.inUse -> stringResource(R.string.running_in_use)
         running.stopsAt != null && running.stopsAt > now -> stringResource(R.string.running_stops_in, countdownLabel(running.stopsAt - now))
         running.stopsAt != null -> stringResource(R.string.running_stopping)
@@ -297,7 +303,7 @@ private fun RunningRow(
                 Text(
                     status,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = if (frozen || !running.inUse) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (frozen || suspended || !running.inUse) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -307,11 +313,18 @@ private fun RunningRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             RunningAction(stringResource(R.string.action_force_stop), onForceStop)
-            if (frozen) {
-                RunningAction(stringResource(R.string.action_restore), onRestore)
-            } else {
-                RunningAction(stringResource(R.string.action_suspend), onSuspend)
-                RunningAction(stringResource(R.string.action_freeze), onFreeze)
+            when {
+                frozen -> RunningAction(stringResource(R.string.action_restore), onRestore)
+                // Already suspended: lifting it is the only meaningful suspend action left, but a
+                // permanent freeze is still on the table.
+                suspended -> {
+                    RunningAction(stringResource(R.string.action_unsuspend), onRestore)
+                    RunningAction(stringResource(R.string.action_freeze), onFreeze)
+                }
+                else -> {
+                    RunningAction(stringResource(R.string.action_suspend), onSuspend)
+                    RunningAction(stringResource(R.string.action_freeze), onFreeze)
+                }
             }
         }
     }

@@ -71,6 +71,7 @@
     <string name="home_running_empty">No blocked apps are running.</string>
     <string name="running_in_use">In use</string>
     <string name="running_frozen">Frozen</string>
+    <string name="running_suspended">Suspended</string>
     <string name="toast_force_stop_failed">This package is protected and cannot be force-stopped</string>
     <string name="toast_suspend_failed">The system refused to suspend this package</string>
     <string name="toast_freeze_failed">Could not freeze this package</string>

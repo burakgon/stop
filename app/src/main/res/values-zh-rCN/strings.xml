@@ -70,6 +70,7 @@
     <string name="home_running_empty">没有已限制的应用在运行。</string>
     <string name="running_in_use">使用中</string>
     <string name="running_frozen">已冻结</string>
+    <string name="running_suspended">已挂起</string>
     <string name="toast_force_stop_failed">这个包被保护，无法强制停止</string>
     <string name="toast_suspend_failed">系统拒绝挂起这个包</string>
     <string name="toast_freeze_failed">无法冻结这个包</string>
