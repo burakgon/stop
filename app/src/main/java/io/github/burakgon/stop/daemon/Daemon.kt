@@ -643,11 +643,9 @@ internal class Daemon(private val selfPackage: String) {
      * to suspend. The tool that actually worked is recorded so [restore] can undo exactly that one.
      */
     private fun freeze(packageName: String, shellFallback: Boolean = false): String? {
-        val dialog = config?.suspendDialog?.ifBlank { null }
-        if (system.setSuspended(packageName, true, userId, dialog)) return FROZEN_SUSPEND
-        // Some releases refuse the binder call from an app process; the shell command is the same
-        // framework entry point `pm` uses, and the daemon already runs as shell.
-        if (shellFallback && suspendViaShell(packageName, true)) return FROZEN_SUSPEND
+        // Freezing means "turned off", so disabling is the primary mechanism: unlike a suspension
+        // it cannot be lifted from the launch dialog (whose unsuspend button exists for suspendNow)
+        // and it keeps the app out of the launcher until the user restores it.
         if (system.setEnabled(packageName, false, userId)) return FROZEN_DISABLE
         if (shellFallback && disableViaShell(packageName, true)) return FROZEN_DISABLE
         if (system.setHidden(packageName, true, userId)) return FROZEN_HIDE

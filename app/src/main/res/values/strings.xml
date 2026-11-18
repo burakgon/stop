@@ -41,8 +41,8 @@
     <string name="action_retry">Try again</string>
     <string name="action_stop_now">Stop now</string>
     <string name="action_force_stop">Force stop</string>
-    <string name="action_suspend">Suspend</string>
-    <string name="action_freeze">Freeze</string>
+    <string name="action_suspend">Stop + suspend</string>
+    <string name="action_freeze">Freeze + disable</string>
     <string name="action_restore">Restore</string>
     <string name="action_thaw">Thaw</string>
     <string name="action_unsuspend">Unsuspend</string>
@@ -70,11 +70,11 @@
     <string name="home_running">Running now</string>
     <string name="home_running_empty">No blocked apps are running.</string>
     <string name="running_in_use">In use</string>
-    <string name="running_frozen">Frozen</string>
+    <string name="running_frozen">Frozen (disabled)</string>
     <string name="running_suspended">Suspended</string>
     <string name="toast_force_stop_failed">This package is protected and cannot be force-stopped</string>
     <string name="toast_suspend_failed">The system refused to suspend this package</string>
-    <string name="toast_freeze_failed">Could not freeze this package</string>
+    <string name="toast_freeze_failed">Could not disable this package</string>
     <string name="running_stops_in">Stops in %1$s</string>
     <string name="running_stopping">Stopping…</string>
     <string name="home_recent">Recent activity</string>
@@ -86,7 +86,7 @@
     <string name="reason_running">Was running in the background</string>
     <string name="reason_manual">Stopped by you</string>
     <string name="reason_tapped">Tried to open while frozen</string>
-    <string name="reason_freeze">Permanently frozen</string>
+    <string name="reason_freeze">Frozen (disabled)</string>
     <string name="reason_thaw">Restored</string>
 
     <!-- Time and durations -->
@@ -111,7 +111,7 @@
     <string name="filter_new">New</string>
     <string name="apps_hint">Apps that are switched on are stopped whenever you leave them.</string>
     <string name="app_status_blocked">Stopped when you leave it</string>
-    <string name="app_status_frozen">Frozen until you restore it</string>
+    <string name="app_status_frozen">Frozen (disabled) until you restore it</string>
     <string name="app_status_suspended">Suspended, not usable until you lift it</string>
     <string name="app_status_allowed">Can run in the background</string>
     <string name="app_status_new_blocked">New · stopped until you decide</string>
@@ -305,14 +305,14 @@
     <string name="paused_notification_text">Shizuku isn\'t running. Start it again so Stop can keep blocked apps from running in the background.</string>
     <!-- Work mode: how a blocked app gets frozen (Shizuku). -->
     <string name="work_mode_title">Work mode</string>
-    <string name="work_mode_body">How Stop handles a blocked app, all through Shizuku. Force stop only kills it, so it can start again. Force stop + suspend stops it and suspends it (pm suspend) so it cannot come back on its own. Permanent freeze keeps it suspended (falling back to disabling) until you restore it by hand.</string>
+    <string name="work_mode_body">How Stop handles a blocked app, all through Shizuku. Force stop only kills it, so it can start again. Force stop + suspend stops it and suspends it (pm suspend) so it cannot come back on its own. Freeze + disable turns the app off (pm disable-user) and kills it, so it cannot be opened or started until you restore it by hand.</string>
     <string name="mode_idle">Idle · restrictions only</string>
     <string name="mode_stop">Shizuku · force stop</string>
     <string name="mode_suspend_stop">Shizuku · force stop + suspend</string>
-    <string name="mode_freeze">Shizuku · permanent freeze</string>
+    <string name="mode_freeze">Shizuku · freeze + disable</string>
     <string name="bloatware_title">Preinstalled cleanup</string>
     <string name="bloatware_close">Close</string>
-    <string name="bloatware_summary">Tiers come from an audit run on a Sony XQ-FS72 (Android 15): A is backend-only preinstalled apps nobody relies on, safe to freeze; B has an icon or a coupled feature, freeze only if you do not use it; C is framework, persistent processes, telephony and GMS — leave it alone. Freezing uses pm suspend, so the icon stays (greyed out) and tapping it explains why the app will not start.</string>
+    <string name="bloatware_summary">Tiers come from an audit run on a Sony XQ-FS72 (Android 15): A is backend-only preinstalled apps nobody relies on, safe to freeze; B has an icon or a coupled feature, freeze only if you do not use it; C is framework, persistent processes, telephony and GMS — leave it alone. Freezing uses pm disable-user, so the icon greys out or leaves the launcher and only this screen can restore it.</string>
     <string name="bloatware_tier_a">A safe</string>
     <string name="bloatware_tier_b">B ask first</string>
     <string name="bloatware_tier_c">C do not touch</string>

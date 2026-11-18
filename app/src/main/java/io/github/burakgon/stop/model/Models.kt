@@ -21,7 +21,7 @@ enum class WorkMode(val code: String) {
     /** 强停挂起：先 `pm suspend` 再 force-stop，应用在后台起不来，点开时由系统拦下。 */
     SUSPEND_STOP("suspend_stop"),
 
-    /** 永久冻结：优先挂起，必要时退到停用/隐藏，应用一直不可用直到手动解冻。 */
+    /** 冻结停用：直接 `pm disable-user`（必要时退到隐藏），应用一直不可用直到手动恢复。 */
     FREEZE("freeze");
 
     companion object {

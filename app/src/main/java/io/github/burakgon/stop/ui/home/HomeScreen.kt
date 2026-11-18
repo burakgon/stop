@@ -10,6 +10,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
@@ -308,22 +309,34 @@ private fun RunningRow(
             }
         }
         Spacer(Modifier.height(10.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(start = 56.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            RunningAction(stringResource(R.string.action_force_stop), onForceStop)
+        val actions: List<Pair<String, () -> Unit>> = buildList {
+            add(stringResource(R.string.action_force_stop) to onForceStop)
             when {
-                frozen -> RunningAction(stringResource(R.string.action_restore), onRestore)
+                frozen -> add(stringResource(R.string.action_restore) to onRestore)
                 // Already suspended: lifting it is the only meaningful suspend action left, but a
                 // permanent freeze is still on the table.
                 suspended -> {
-                    RunningAction(stringResource(R.string.action_unsuspend), onRestore)
-                    RunningAction(stringResource(R.string.action_freeze), onFreeze)
+                    add(stringResource(R.string.action_unsuspend) to onRestore)
+                    add(stringResource(R.string.action_freeze) to onFreeze)
                 }
                 else -> {
-                    RunningAction(stringResource(R.string.action_suspend), onSuspend)
-                    RunningAction(stringResource(R.string.action_freeze), onFreeze)
+                    add(stringResource(R.string.action_suspend) to onSuspend)
+                    add(stringResource(R.string.action_freeze) to onFreeze)
+                }
+            }
+        }
+        // Spread the actions across the full width instead of clustering them on the left.
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            actions.forEachIndexed { index, (label, action) ->
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = when (index) {
+                        0 -> Alignment.CenterStart
+                        actions.lastIndex -> Alignment.CenterEnd
+                        else -> Alignment.Center
+                    },
+                ) {
+                    RunningAction(label, action)
                 }
             }
         }

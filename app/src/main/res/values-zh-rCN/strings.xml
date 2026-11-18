@@ -40,8 +40,8 @@
     <string name="action_retry">重试</string>
     <string name="action_stop_now">立即停止</string>
     <string name="action_force_stop">强制停止</string>
-    <string name="action_suspend">挂起</string>
-    <string name="action_freeze">冻结</string>
+    <string name="action_suspend">强停挂起</string>
+    <string name="action_freeze">冻结停用</string>
     <string name="action_restore">恢复</string>
     <string name="action_thaw">解冻</string>
     <string name="action_unsuspend">解挂</string>
@@ -69,11 +69,11 @@
     <string name="home_running">正在运行</string>
     <string name="home_running_empty">没有已限制的应用在运行。</string>
     <string name="running_in_use">使用中</string>
-    <string name="running_frozen">已冻结</string>
+    <string name="running_frozen">已冻结停用</string>
     <string name="running_suspended">已挂起</string>
     <string name="toast_force_stop_failed">这个包被保护，无法强制停止</string>
     <string name="toast_suspend_failed">系统拒绝挂起这个包</string>
-    <string name="toast_freeze_failed">无法冻结这个包</string>
+    <string name="toast_freeze_failed">无法冻结停用这个包</string>
     <string name="running_stops_in">%1$s 后停止</string>
     <string name="running_stopping">正在停止…</string>
     <string name="home_recent">最近活动</string>
@@ -85,7 +85,7 @@
     <string name="reason_running">在后台运行</string>
     <string name="reason_manual">被你手动停止</string>
     <string name="reason_tapped">冻结期间被点开</string>
-    <string name="reason_freeze">已永久冻结</string>
+    <string name="reason_freeze">已冻结停用</string>
     <string name="reason_thaw">已恢复</string>
 
     <!-- Time and durations -->
@@ -110,7 +110,7 @@
     <string name="filter_new">新增</string>
     <string name="apps_hint">已开启限制的应用，在你离开后会立即被停止。</string>
     <string name="app_status_blocked">离开后即停止</string>
-    <string name="app_status_frozen">已永久冻结，恢复前不可用</string>
+    <string name="app_status_frozen">已冻结停用，恢复前不可用</string>
     <string name="app_status_suspended">已挂起，解挂前不可用</string>
     <string name="app_status_allowed">可在后台运行</string>
     <string name="app_status_new_blocked">新增 · 待你决定前保持停止</string>
@@ -295,14 +295,14 @@
     <string name="paused_notification_text">Shizuku 未运行。请重新启动它，以便 Stop 继续阻止已限制的应用在后台运行。</string>
     <!-- 工作模式：被限制的应用用哪种方式冻结（都走 Shizuku）。 -->
     <string name="work_mode_title">工作模式</string>
-    <string name="work_mode_body">Stop 用哪种方式处理被限制的应用，全部通过 Shizuku 执行。强行停止只是杀掉进程，应用随时能再打开；强停挂起在杀进程前先挂起（pm suspend），应用无法自行在后台起来，点开时由系统拦下；永久冻结会一直挂着（必要时退回停用），要你手动解冻才能再用。</string>
+    <string name="work_mode_body">Stop 用哪种方式处理被限制的应用，全部通过 Shizuku 执行。强行停止只是杀掉进程，应用随时能再打开；强停挂起在杀进程前先挂起（pm suspend），应用无法自行在后台起来，点开时由系统拦下；冻结停用会直接把应用停用（pm disable-user）并杀掉进程，图标变灰、点不开，要你手动恢复才能再用。</string>
     <string name="mode_idle">空闲 · 仅额外限制</string>
     <string name="mode_stop">Shizuku · 强行停止</string>
     <string name="mode_suspend_stop">Shizuku · 强停挂起</string>
-    <string name="mode_freeze">Shizuku · 永久冻结</string>
+    <string name="mode_freeze">Shizuku · 冻结停用</string>
     <string name="bloatware_title">预装应用清理</string>
     <string name="bloatware_close">关闭</string>
-    <string name="bloatware_summary">清单按索尼 XQ-FS72（Android 15）的实测审计分档：A 档是没人依赖的后台预装，可放心冻结；B 档有图标或与某项功能耦合，确认自己不用再冻；C 档是框架、常驻进程、通信与 GMS，不要动。冻结走 pm suspend，图标保留但变灰，点开会提示已被 Stop 冻结。</string>
+    <string name="bloatware_summary">清单按索尼 XQ-FS72（Android 15）的实测审计分档：A 档是没人依赖的后台预装，可放心冻结；B 档有图标或与某项功能耦合，确认自己不用再冻；C 档是框架、常驻进程、通信与 GMS，不要动。冻结走 pm disable-user，图标会变灰或从桌面消失，要在这里才能恢复。</string>
     <string name="bloatware_tier_a">A 可安全</string>
     <string name="bloatware_tier_b">B 按需</string>
     <string name="bloatware_tier_c">C 别碰</string>

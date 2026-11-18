@@ -1,4 +1,4 @@
-# 自动暂停（Auto Pause）2.0.2 — 分支说明
+# 自动暂停（Auto Pause）2.0.4 — 分支说明
 
 本分支基于上游 `v1.0.0` 之后，做了中文化并加了一组「让被限制的应用真的起不来」的能力。
 包名保持 `io.github.burakgon.stop` 不变，可与上游版本互相覆盖安装（但签名不同，正式替换前需卸载）。
@@ -16,12 +16,12 @@
 | `idle` 空闲 | 只做额外限制（电池/待机），不杀进程 |
 | `stop` 强行停止 | 离开宽限期后 `forceStop` |
 | `suspend_stop` 强停挂起 | 先 `pm suspend` 再 `forceStop`，应用无法自行在后台起来 |
-| `freeze` 永久冻结 | 按 suspend → disable → hide 顺序尝试，记录实际生效方式 |
+| `freeze` 冻结停用 | 直接 `pm disable-user`（必要时退到 hide），图标变灰/消失，记录实际生效方式 |
 
-「永久冻结」与「强停挂起」的区别在于记录的集合：
+「冻结停用」与「强停挂起」的区别在于记录的集合：
 `restrictions.auto`（跟规则走，取消限制即释放）与 `restrictions.frozen` + `manual`（改配置不会偷偷解冻）。
 
-## 挂起优先的冻结
+## 挂起调用（强停挂起 / 首页「挂起」）
 
 `SystemApis.setSuspended()` 不再写死参数个数，而是按 `IPackageManager.setPackagesSuspendedAsUser`
 在本机的真实签名逐位构造参数。Android 15 上它是 9 参且返回 `String[]`：
@@ -36,13 +36,14 @@ setPackagesSuspendedAsUser(String[], boolean, PersistableBundle, PersistableBund
 界面于是弹「系统拒绝挂起这个包」。现在按名字匹配并逐位填充，`SuspendDialogInfo` 走反射构造，
 并带 `BUTTON_ACTION_UNSUSPEND` 中性按钮（系统自带的「解除挂起」）。
 
-挂起失败时回退 `pm suspend` / `pm disable-user`（shell 身份，仅用于用户显式动作，后台拦截不 fork）。
+挂起失败时回退 `pm suspend`（shell 身份，仅用于用户显式动作，后台拦截不 fork）。
+冻结停用不走挂起：`freeze()` 直接 `setEnabled(false)`，失败才退到 `pm disable-user` 与 `setHidden(true)`。
 
 ## 点图标即打开
 
 被挂起的应用被点开时，系统会起 `SuspendedAppActivity` 而不是应用本身，任务栈里也查不到原包名。
 守护进程改为监听 `logcat -s ActivityTaskManager:I` 的 `START u0 {… cmp=<pkg>/<activity>}`，
-命中冻结/挂起集合就解挂、记录「冻结期间被点开」事件并拉起原 Activity；同时 5 秒看门狗负责重启监听。
+命中挂起集合就解挂、记录「冻结期间被点开」事件并拉起原 Activity；同时 5 秒看门狗负责重启监听。
 
 ## 其他
 
