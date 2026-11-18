@@ -26,11 +26,22 @@ object StopReasons {
 
     /** Stopped on request, from the app, the tile or the shortcut. */
     const val MANUAL = "manual"
+
+    /** The user tried to open a frozen app; the system showed the dialog instead of launching it. */
+    const val TAPPED = "tapped"
+
+    /** Permanently frozen on request (work mode, shortcut or the bloatware list). */
+    const val FREEZE = "freeze"
+
+    /** Restored from a permanent freeze. */
+    const val THAW = "thaw"
 }
 
 /** Everything the daemon enforces, pushed by the app as one document. */
 data class DaemonConfig(
     val enabled: Boolean,
+    /** Work mode code: idle / stop / freeze. */
+    val mode: String,
     val graceMs: Long,
     val allowOngoing: Boolean,
     val restrictBackground: Boolean,
@@ -39,11 +50,14 @@ data class DaemonConfig(
     /** Every package the app has a rule for. Packages missing here are treated as new installs. */
     val rules: Map<String, Rule>,
     val protectedPackages: Set<String>,
+    /** Shown by the system when this mode freezes by suspending the app. */
+    val suspendDialog: String = "",
 ) {
     data class Rule(val uid: Int, val blocked: Boolean, val graceMs: Long? = null)
 
     fun toJson(): String = JSONObject().apply {
         put("enabled", enabled)
+        put("mode", mode)
         put("graceMs", graceMs)
         put("allowOngoing", allowOngoing)
         put("restrictBackground", restrictBackground)
@@ -59,6 +73,7 @@ data class DaemonConfig(
             }
         })
         put("protected", JSONArray(protectedPackages.toList()))
+        if (suspendDialog.isNotEmpty()) put("suspendDialog", suspendDialog)
     }.toString()
 
     companion object {
@@ -77,6 +92,7 @@ data class DaemonConfig(
             val protectedJson = o.optJSONArray("protected") ?: JSONArray()
             return DaemonConfig(
                 enabled = o.optBoolean("enabled", false),
+                mode = o.optString("mode", "stop"),
                 graceMs = o.optLong("graceMs", 60_000),
                 allowOngoing = o.optBoolean("allowOngoing", false),
                 restrictBackground = o.optBoolean("restrictBackground", false),
@@ -84,6 +100,7 @@ data class DaemonConfig(
                 userId = o.optInt("userId", 0),
                 rules = rules,
                 protectedPackages = (0 until protectedJson.length()).mapTo(HashSet()) { protectedJson.getString(it) },
+                suspendDialog = o.optString("suspendDialog", ""),
             )
         }
     }

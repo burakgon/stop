@@ -1,5 +1,6 @@
 package io.github.burakgon.stop.core
 
+import android.content.Context
 import android.util.Log
 import io.github.burakgon.stop.daemon.DaemonConfig
 import io.github.burakgon.stop.data.InstalledApps
@@ -27,6 +28,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 
 /** Turns settings and rules into a [DaemonConfig] and pushes it whenever either changes. */
 class ConfigSync(
+    private val context: Context,
     private val scope: CoroutineScope,
     private val settings: SettingsRepository,
     private val rules: RulesRepository,
@@ -89,6 +91,7 @@ class ConfigSync(
         if (!settings.onboarded) return null
         return DaemonConfig(
             enabled = settings.protectionEnabled,
+            mode = settings.workMode.code,
             graceMs = settings.graceSeconds * 1_000L,
             allowOngoing = settings.allowOngoing,
             restrictBackground = settings.extraRestrictions,
@@ -103,6 +106,7 @@ class ConfigSync(
                 )
             }.toMap(),
             protectedPackages = protected,
+            suspendDialog = context.getString(io.github.burakgon.stop.R.string.freeze_suspend_dialog),
         )
     }
 }

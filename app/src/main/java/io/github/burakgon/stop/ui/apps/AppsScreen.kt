@@ -39,6 +39,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -67,6 +68,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.burakgon.stop.R
 import io.github.burakgon.stop.data.SystemRoles
@@ -91,6 +94,9 @@ fun AppsScreen(
     var menuOpen by remember { mutableStateOf(false) }
     var bulkMode by remember { mutableStateOf<RuleMode?>(null) }
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+
+    // Re-read on every return to the app: the daemon can lift a freeze while this screen is gone.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.reload() }
 
     LaunchedEffect(requestedFilter) {
         if (requestedFilter != null) {
@@ -196,6 +202,8 @@ fun AppsScreen(
                     AppRow(
                         item = item,
                         onToggle = { viewModel.setBlocked(item.app.packageName, it) },
+                        onThaw = { viewModel.thaw(item.app.packageName) },
+                        onUnsuspend = { viewModel.unsuspend(item.app.packageName) },
                         onClick = { selected = item.app.packageName },
                         modifier = Modifier.animateItem(),
                     )
@@ -280,11 +288,14 @@ private fun FilterRow(filter: Filter, counts: Map<Filter, Int>, onSelect: (Filte
     ) {
         for (option in Filter.entries) {
             val count = counts[option] ?: 0
-            if (option == Filter.NEW && count == 0 && filter != Filter.NEW) continue
+            val optional = option == Filter.NEW
+            if (optional && count == 0 && filter != option) continue
             val label = stringResource(
                 when (option) {
                     Filter.ALL -> R.string.filter_all
                     Filter.BLOCKED -> R.string.filter_blocked
+                    Filter.FROZEN -> R.string.filter_frozen
+                    Filter.SUSPENDED -> R.string.filter_suspended
                     Filter.ALLOWED -> R.string.filter_allowed
                     Filter.NEW -> R.string.filter_new
                 }
@@ -307,12 +318,16 @@ private fun FilterRow(filter: Filter, counts: Map<Filter, Int>, onSelect: (Filte
 private fun AppRow(
     item: AppsViewModel.Item,
     onToggle: (Boolean) -> Unit,
+    onThaw: () -> Unit,
+    onUnsuspend: () -> Unit,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val status = when {
         item.app.packageName == SystemRoles.SHIZUKU_PACKAGE -> stringResource(R.string.app_status_needed_by_stop)
         item.isProtected -> stringResource(R.string.app_status_protected)
+        item.frozen -> stringResource(R.string.app_status_frozen)
+        item.suspended -> stringResource(R.string.app_status_suspended)
         item.isNew && item.blocked -> stringResource(R.string.app_status_new_blocked)
         item.isNew -> stringResource(R.string.app_status_new_allowed)
         item.blocked && item.stopsToday > 0 ->
@@ -351,7 +366,23 @@ private fun AppRow(
             )
         },
         trailingContent = {
-            Switch(checked = item.blocked, onCheckedChange = onToggle, enabled = !item.isProtected)
+            // A frozen app can't be limited or allowed until it is usable again, so the switch
+            // would do nothing: it is replaced by the one action that has an effect.
+            when {
+                item.frozen -> OutlinedButton(
+                    onClick = onThaw,
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                ) {
+                    Text(stringResource(R.string.action_thaw))
+                }
+                item.suspended -> OutlinedButton(
+                    onClick = onUnsuspend,
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                ) {
+                    Text(stringResource(R.string.action_unsuspend))
+                }
+                else -> Switch(checked = item.blocked, onCheckedChange = onToggle, enabled = !item.isProtected)
+            }
         },
     )
 }

@@ -87,6 +87,9 @@ internal class Enforcer(private val host: Host, private val states: ProcStateTab
 
     private val tracks = HashMap<Int, Track>()
 
+    /** Temporary diagnostic hook; the daemon writes these lines to /data/local/tmp. */
+    var trace: ((String) -> Unit)? = null
+
     /**
      * Switches to [newPolicy]. [running] maps each running uid that has a blocked package to its
      * current process state; null when the system couldn't tell, in which case nothing that
@@ -191,6 +194,7 @@ internal class Enforcer(private val host: Host, private val states: ProcStateTab
                 continue
             }
             val sinceLeft = if (track.leftAt == NEVER) -1L else now - track.leftAt
+            trace?.invoke("tick stop uid=$uid state=$state reason=${track.reason} sinceLeft=$sinceLeft pkgs=${packages.joinToString(",")}")
             for (pkg in packages) {
                 if (host.forceStop(pkg)) host.onStopped(pkg, track.reason, sinceLeft, state)
             }
@@ -299,6 +303,12 @@ internal class Enforcer(private val host: Host, private val states: ProcStateTab
                     track.deadline = now + if (track.aliveSinceLeft) MIN_DELAY_MS else wakeDelay(track, now)
                 }
                 host.scheduleTick(track.deadline - now)
+                // One line per scheduled stop: the previous per-state dump filled the diagnostic
+                // file within hours, while a missing line is exactly what a stuck app looks like.
+                trace?.invoke(
+                    "schedule uid=$uid state=$procState reason=${track.reason} " +
+                        "grace=$grace stopIn=${track.deadline - now}",
+                )
             }
         }
     }

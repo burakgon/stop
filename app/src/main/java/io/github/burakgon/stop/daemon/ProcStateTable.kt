@@ -40,12 +40,16 @@ internal data class ProcStateTable(
     fun classify(state: Int, allowOngoing: Boolean): Usage = when {
         state < 0 || state >= nonexistent -> Usage.GONE
         state <= top || state == topSleeping -> Usage.USER
-        state == boundTop ||
+        // Another app on screen (or the framework itself) is bound to this one: it is being used.
+        state == boundTop || state == backup -> Usage.HELD
+        // A foreground service only shields the app when the user asked for ongoing work to
+        // finish. Bound foreground services are what push, download and sync services hold
+        // forever — counting them as use would shield those apps permanently, so the grace
+        // period would never even be scheduled.
+        state == foregroundService ||
+            state == foregroundServiceLocation ||
             state == boundForegroundService ||
-            state == importantForeground ||
-            state == backup -> Usage.HELD
-        state == foregroundService || state == foregroundServiceLocation ->
-            if (allowOngoing) Usage.HELD else Usage.BACKGROUND
+            state == importantForeground -> if (allowOngoing) Usage.HELD else Usage.BACKGROUND
         else -> Usage.BACKGROUND
     }
 

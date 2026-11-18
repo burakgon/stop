@@ -45,7 +45,7 @@ class AppGraph(val context: Context) {
     val packageEvents = PackageEvents(settings, rules, apps, roles, notifications)
     /** Bumped whenever the app comes to the foreground, so default apps are looked up again. */
     val rolesChanged = MutableStateFlow(0)
-    val sync = ConfigSync(scope, settings, rules, apps, roles, daemon, rolesChanged)
+    val sync = ConfigSync(context, scope, settings, rules, apps, roles, daemon, rolesChanged)
 
     private val daemonListener = object : IDaemonListener.Stub() {
         override fun onEvents(events: String) {

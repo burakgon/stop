@@ -1,6 +1,7 @@
 package io.github.burakgon.stop.ui.home
 
 import android.os.SystemClock
+import android.widget.Toast
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
@@ -9,6 +10,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
@@ -42,10 +44,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -75,6 +79,12 @@ fun HomeScreen(
     val viewModel = graphViewModel { HomeViewModel(it) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val protection by main.protection.collectAsStateWithLifecycle()
+
+    // Failures of the per-app buttons (protected packages, refused suspends) surface here.
+    val context = LocalContext.current
+    LaunchedEffect(viewModel) {
+        viewModel.messages.collect { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
+    }
 
     val statusBar = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     LazyColumn(
@@ -154,7 +164,19 @@ fun HomeScreen(
                         }
                         state.running.forEachIndexed { index, running ->
                             if (index > 0) GroupDivider()
-                            RunningRow(running, now, onStop = { viewModel.stopNow(running.packageName) })
+                            RunningRow(
+                                running = running,
+                                now = now,
+                                // Suspension keeps its own flag, so the two states must not be
+                                // collapsed: a suspended app is lifted with "解挂", a disabled one
+                                // with "恢复".
+                                frozen = running.app?.let { !it.enabled && !it.suspended } == true,
+                                suspended = running.app?.suspended == true,
+                                onForceStop = { viewModel.forceStop(running.packageName) },
+                                onSuspend = { viewModel.suspend(running.packageName) },
+                                onFreeze = { viewModel.setFrozen(running.packageName, true) },
+                                onRestore = { viewModel.setFrozen(running.packageName, false) },
+                            )
                         }
                     }
                 }
@@ -250,28 +272,85 @@ private fun UndecidedRow(packageName: String, label: String, onBlock: () -> Unit
 }
 
 @Composable
-private fun RunningRow(running: HomeViewModel.Running, now: Long, onStop: () -> Unit) {
+private fun RunningRow(
+    running: HomeViewModel.Running,
+    now: Long,
+    frozen: Boolean,
+    suspended: Boolean,
+    onForceStop: () -> Unit,
+    onSuspend: () -> Unit,
+    onFreeze: () -> Unit,
+    onRestore: () -> Unit,
+) {
     val status = when {
+        frozen -> stringResource(R.string.running_frozen)
+        suspended -> stringResource(R.string.running_suspended)
         running.inUse -> stringResource(R.string.running_in_use)
         running.stopsAt != null && running.stopsAt > now -> stringResource(R.string.running_stops_in, countdownLabel(running.stopsAt - now))
         running.stopsAt != null -> stringResource(R.string.running_stopping)
         else -> stringResource(R.string.running_in_use)
     }
-    ListItem(
-        colors = ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
-        leadingContent = { AppIcon(running.packageName, size = 40.dp) },
-        headlineContent = {
-            Text(running.app?.label ?: running.packageName, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        },
-        supportingContent = {
-            Text(status, color = if (running.inUse) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary)
-        },
-        trailingContent = {
-            IconButton(onClick = onStop) {
-                Icon(Icons.Rounded.Block, contentDescription = stringResource(R.string.action_stop_now))
+    Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            AppIcon(running.packageName, size = 40.dp)
+            Spacer(Modifier.width(16.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    running.app?.label ?: running.packageName,
+                    style = MaterialTheme.typography.bodyLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    status,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (frozen || suspended || !running.inUse) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
-        },
-    )
+        }
+        Spacer(Modifier.height(10.dp))
+        val actions: List<Pair<String, () -> Unit>> = buildList {
+            add(stringResource(R.string.action_force_stop) to onForceStop)
+            when {
+                frozen -> add(stringResource(R.string.action_restore) to onRestore)
+                // Already suspended: lifting it is the only meaningful suspend action left, but a
+                // permanent freeze is still on the table.
+                suspended -> {
+                    add(stringResource(R.string.action_unsuspend) to onRestore)
+                    add(stringResource(R.string.action_freeze) to onFreeze)
+                }
+                else -> {
+                    add(stringResource(R.string.action_suspend) to onSuspend)
+                    add(stringResource(R.string.action_freeze) to onFreeze)
+                }
+            }
+        }
+        // Spread the actions across the full width instead of clustering them on the left.
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            actions.forEachIndexed { index, (label, action) ->
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = when (index) {
+                        0 -> Alignment.CenterStart
+                        actions.lastIndex -> Alignment.CenterEnd
+                        else -> Alignment.Center
+                    },
+                ) {
+                    RunningAction(label, action)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RunningAction(label: String, onClick: () -> Unit) {
+    OutlinedButton(
+        onClick = onClick,
+        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+    ) {
+        Text(label, style = MaterialTheme.typography.labelLarge)
+    }
 }
 
 @Composable

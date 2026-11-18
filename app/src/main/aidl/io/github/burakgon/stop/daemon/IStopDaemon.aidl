@@ -29,4 +29,19 @@ interface IStopDaemon {
 
     /** Undoes every background restriction the daemon applied, regardless of settings. */
     void resetRestrictions() = 8;
+
+    /** Freezes or restores one package (desktop shortcut). */
+    boolean setFrozen(String packageName, boolean frozen) = 9;
+
+    /** Force-stops one package right now, ignoring rules and grace periods. */
+    boolean forceStopNow(String packageName) = 10;
+
+    /** Suspends one package right now, then stops it. */
+    boolean suspendNow(String packageName) = 11;
+
+    /** Comma-separated packages the daemon froze (it knows which mechanism was used). */
+    String getFrozen() = 12;
+
+    /** Comma-separated subset of the given packages the framework reports as suspended. */
+    String getSuspended(String packages) = 13;
 }

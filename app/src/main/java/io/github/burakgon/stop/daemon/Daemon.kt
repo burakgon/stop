@@ -11,6 +11,7 @@ import android.os.RemoteException
 import android.os.SystemClock
 import android.util.Log
 import io.github.burakgon.stop.BuildConfig
+import io.github.burakgon.stop.model.WorkMode
 import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.FutureTask
@@ -75,7 +76,8 @@ internal class Daemon(private val selfPackage: String) {
 
         override fun isEssential(packageName: String): Boolean = packageName in essentials.get()
 
-        override fun isStopped(packageName: String): Boolean? = system.isStopped(packageName, userId)
+        override fun isStopped(packageName: String): Boolean? =
+            if (packageName in restrictions.frozen) true else system.isStopped(packageName, userId)
 
         override fun closedByUserSince(packages: List<String>, sinceMs: Long): Boolean {
             // Exit records carry wall-clock times; sinceMs is on the elapsedRealtime clock.
@@ -84,20 +86,20 @@ internal class Daemon(private val selfPackage: String) {
         }
 
         override fun forceStop(packageName: String): Boolean {
-            val stopped = system.forceStop(packageName, userId)
+            val stopped = block(packageName)
             if (stopped) reapplyRestrictions(packageName)
             return stopped
         }
 
         override fun onStopped(packageName: String, reason: String, sinceLeftMs: Long, procState: Int) {
-            log.add(packageName, reason, sinceLeftMs, procState)
             Log.i(TAG, "stopped $packageName ($reason, state $procState)")
-            handler.removeCallbacks(pushEvents)
-            handler.postDelayed(pushEvents, PUSH_DELAY_MS)
+            recordEvent(packageName, reason, sinceLeftMs, procState)
         }
     }
 
-    private val enforcer: Enforcer = Enforcer(host, states)
+    private val debug = DebugDump(File("/data/local/tmp/$selfPackage"))
+
+    private val enforcer: Enforcer = Enforcer(host, states).also { it.trace = debug::write }
     private val watcher: PackageWatcher = PackageWatcher(handler, system, { userId }, ::onPackagesChanged)
 
     private val tick: Runnable = Runnable {
@@ -126,13 +128,142 @@ internal class Daemon(private val selfPackage: String) {
         }
     }
 
+    /**
+     * Records one event and schedules the debounced push. The daemon mostly runs while the app is
+     * asleep, so [pushEvents] drops the push unless the app is in front; the app pulls the backlog
+     * when it comes back.
+     */
+    private fun recordEvent(packageName: String, reason: String, sinceLeftMs: Long = -1L, procState: Int = -1) {
+        log.add(packageName, reason, sinceLeftMs, procState)
+        handler.removeCallbacks(pushEvents)
+        handler.postDelayed(pushEvents, PUSH_DELAY_MS)
+    }
+
+    /** Last "tapped while frozen" event per package, so re-polling the same screen logs once. */
+    private val tappedAt = HashMap<String, Long>()
+
+    /**
+     * Watches activity starts in the system log. A frozen app cannot start, and the dialog the system
+     * shows instead carries no hint of which app was tapped — but ActivityTaskManager still logs the
+     * original `START ... cmp=<pkg>/<activity>` line. That line is the only reliable signal, so it is
+     * used to treat a tap as intent to use the app right now: the freeze is lifted and the app is
+     * launched, so the user gets "tap and it opens" instead of a dead dialog.
+     */
+    private var activityLog: java.lang.Process? = null
+    private var watcherStopped = false
+
+    private fun startActivityWatcher() {
+        if (activityLog != null || watcherStopped) return
+        runCatching {
+            val process = ProcessBuilder("/system/bin/logcat", "-v", "brief", "-s", "ActivityTaskManager:I")
+                .redirectErrorStream(true)
+                .start()
+            activityLog = process
+            Thread({
+                runCatching {
+                    process.inputStream.bufferedReader().forEachLine(::onStartLogged)
+                }
+                activityLog = null
+                // logcat exits when the buffer is recreated (crash, restart of the system server),
+                // so the watcher has to come back on its own or tap-to-open silently stops working.
+                if (!watcherStopped) handler.postDelayed({ startActivityWatcher() }, WATCHER_RESTART_MS)
+                debug.write("activity watcher ended")
+            }, "stop-logcat").apply { isDaemon = true }.start()
+            debug.write("activity watcher started")
+        }.onFailure {
+            Log.w(TAG, "cannot watch activity starts", it)
+            debug.write("activity watcher failed: ${it.message}")
+        }
+    }
+
+    private fun onStartLogged(line: String) {
+        if (!line.contains("START u")) return
+        val match = START_PATTERN.find(line) ?: return
+        val packageName = match.groupValues[1]
+        val activity = match.groupValues[2]
+        if (packageName == selfPackage) return
+        handler.post {
+            // Rely on what the framework reports, not only on our own bookkeeping: a suspension
+            // that was never recorded still has to be lifted when the user taps the icon.
+            val frozen = packageName in restrictions.frozen
+            val auto = packageName in restrictions.auto
+            val suspended = system.isSuspended(packageName, userId)
+            debug.write("tap pkg=$packageName activity=$activity frozen=$frozen auto=$auto suspended=$suspended")
+            if (!frozen && !auto && !suspended) return@post
+            val now = SystemClock.elapsedRealtime()
+            // Only guards against the same start being echoed twice; a second real tap must work
+            // again, and by then the app has usually been re-frozen by the background rules.
+            if (now - (tappedAt[packageName] ?: 0L) <= ACTION_DEDUPE_MS) return@post
+            tappedAt[packageName] = now
+            Log.i(TAG, "frozen app $packageName was opened; restoring and launching it")
+            recordEvent(packageName, StopReasons.TAPPED)
+            val released = restore(packageName, shellFallback = true)
+            val launched = launch(packageName, activity)
+            debug.write("tap handled pkg=$packageName released=$released launched=$launched")
+            if (!launched) Log.w(TAG, "could not relaunch $packageName after restoring it")
+            // The app is allowed to run now, so the background rules have to judge it again from
+            // scratch the moment the user leaves it.
+            enforcer.recheck(packageName)
+        }
+    }
+
+    /**
+     * Shizuku user services are ordinary processes: replacing the app leaves the old ones alive
+     * and the app can end up talking to a daemon built from a previous APK. Anything still running
+     * the same `:daemon` class therefore gets killed before this one starts watching.
+     */
+    private fun reapOrphans() {
+        val self = Process.myPid()
+        val uid = Process.myUid()
+        val marker = "$selfPackage:daemon"
+        val uptimeTicks = runCatching {
+            File("/proc/uptime").readText().substringBefore(' ').toDouble()
+        }.getOrDefault(0.0)
+        var killed = 0
+        runCatching {
+            File("/proc").listFiles()?.forEach { entry ->
+                val pid = entry.name.toIntOrNull() ?: return@forEach
+                if (pid == self) return@forEach
+                val cmdline = runCatching { File(entry, "cmdline").readText() }
+                    .getOrNull()?.trimEnd('\u0000') ?: return@forEach
+                if (!cmdline.contains(marker)) return@forEach
+                val owner = runCatching {
+                    File(entry, "status").readLines()
+                        .firstOrNull { it.startsWith("Uid:") }
+                        ?.split('\t', ' ')?.filter { it.isNotBlank() }?.getOrNull(1)?.toIntOrNull()
+                }.getOrNull()
+                if (owner != null && owner != uid) return@forEach
+                val started = runCatching { startTicks(entry) }.getOrNull()
+                if (started != null && uptimeTicks > 0.0 &&
+                    uptimeTicks - started / 100.0 < SIBLING_GRACE_SECONDS
+                ) {
+                    return@forEach
+                }
+                runCatching { Process.killProcess(pid) }.onSuccess { killed++ }
+            }
+        }
+        if (killed > 0) Log.i(TAG, "reaped $killed stale daemon process(es)")
+        debug.write("reap self=$self killed=$killed")
+    }
+
+    private fun startTicks(entry: File): Double? {
+        val stat = File(entry, "stat").readText()
+        val close = stat.lastIndexOf(')')
+        if (close < 0) return null
+        // Field 22 (starttime); the fields after "pid (comm)" restart at index 0 == state (field 3).
+        return stat.substring(close + 1).trim().split(' ').getOrNull(19)?.toDoubleOrNull()
+    }
+
     fun start() {
         handler.post {
+            reapOrphans()
             val uidObserver = UidObserver(states.nonexistent, ::onUidState)
             if (system.registerUidObserver(uidObserver)) observer = uidObserver
             watcher.start()
             handler.postDelayed(sweep, sweepInterval())
+            startActivityWatcher()
             Log.i(TAG, "started as uid ${Process.myUid()}, watching via ${watchMode()}")
+            debug.write("start uid=${Process.myUid()} watch=${watchMode()} observer=${observer != null}")
         }
     }
 
@@ -140,6 +271,9 @@ internal class Daemon(private val selfPackage: String) {
         runOnHandler {
             observer?.let(system::unregisterUidObserver)
             watcher.stop()
+            watcherStopped = true
+            runCatching { activityLog?.destroy() }
+            activityLog = null
         }
     }
 
@@ -157,10 +291,20 @@ internal class Daemon(private val selfPackage: String) {
             val blocked = newConfig.rules.filter { (pkg, rule) ->
                 rule.blocked && pkg != selfPackage && pkg !in newConfig.protectedPackages && pkg !in ALWAYS_PROTECTED
             }
+            val mode = WorkMode.fromCode(newConfig.mode)
+            // 空闲模式什么都不冻结，只保留额外限制（后台运行/待机分组）。
+            val enforcing = newConfig.enabled && mode != WorkMode.IDLE
             updateRestrictions(newConfig, if (newConfig.enabled) blocked else emptyMap())
-            val policy = Enforcer.Policy(newConfig.enabled, newConfig.graceMs, newConfig.allowOngoing, blocked)
-            enforcer.setPolicy(policy, if (newConfig.enabled) runningBlockedStates(blocked.values) else emptyMap())
-            Log.i(TAG, "config: enabled=${newConfig.enabled} blocked=${blocked.size} grace=${newConfig.graceMs}ms")
+            // 切换工作模式、解除限制或关闭保护时，把之前用停用/隐藏/暂停冻住的应用放出来。
+            syncFrozen(mode, if (enforcing) blocked.keys else emptySet())
+            val policy = Enforcer.Policy(enforcing, newConfig.graceMs, newConfig.allowOngoing, blocked)
+            enforcer.setPolicy(policy, if (enforcing) runningBlockedStates(blocked.values) else emptyMap())
+            Log.i(TAG, "config: enabled=${newConfig.enabled} mode=${mode.code} blocked=${blocked.size} grace=${newConfig.graceMs}ms")
+            debug.write(
+                "config enabled=${newConfig.enabled} mode=${mode.code} enforcing=$enforcing " +
+                    "grace=${newConfig.graceMs} allowOngoing=${newConfig.allowOngoing} " +
+                    "blocked=${blocked.keys.joinToString(",")}",
+            )
         }
     }
 
@@ -188,6 +332,62 @@ internal class Daemon(private val selfPackage: String) {
         RunningApp.listToJson(enforcer.snapshot())
     } ?: "[]"
 
+    /** Freezes or restores one package on request (desktop shortcut toggle). */
+    fun setFrozen(packageName: String, frozen: Boolean): Boolean = runOnHandler<Boolean> {
+        if (frozen) {
+            if (restrictions.frozen.containsKey(packageName)) {
+                true
+            } else {
+                val mechanism = freeze(packageName, shellFallback = true)
+                if (mechanism == null) {
+                    false
+                } else {
+                    restrictions.frozen[packageName] = mechanism
+                    restrictions.manual.add(packageName)
+                    system.forceStop(packageName, userId)
+                    recordEvent(packageName, StopReasons.FREEZE)
+                    true
+                }
+            }
+        } else {
+            // The daemon may not know the tool: an app suspended from the home screen ("挂起") is
+            // frozen in the system without being recorded, so always undo instead of trusting the map.
+            restore(packageName, shellFallback = true)
+            true
+        }
+    } ?: false
+
+    /** Force-stops one package now, whatever the rules or work mode say (home "强制停止"). */
+    fun forceStopNow(packageName: String): Boolean = runOnHandler<Boolean> {
+        if (packageName in ALWAYS_PROTECTED) {
+            false
+        } else {
+            Log.i(TAG, "force stop $packageName on request")
+            system.forceStop(packageName, userId).also { if (it) recordEvent(packageName, StopReasons.MANUAL) }
+        }
+    } ?: false
+
+    /**
+     * Suspends one package now without recording it as a permanent freeze (home "挂起"). The app
+     * stays suspended until the user restores it, so a later [restore] with no recorded tool undoes
+     * suspension first.
+     */
+    fun suspendNow(packageName: String): Boolean = runOnHandler<Boolean> {
+        if (packageName in ALWAYS_PROTECTED) {
+            false
+        } else {
+            val dialog = config?.suspendDialog?.ifBlank { null }
+            val suspended = system.setSuspended(packageName, true, userId, dialog) ||
+                suspendViaShell(packageName, true)
+            if (suspended) {
+                // Suspending keeps the process; the user asked for the app to stop running.
+                system.forceStop(packageName, userId)
+                Log.i(TAG, "suspended $packageName on request")
+            }
+            suspended
+        }
+    } ?: false
+
     fun stopNow(packages: List<String>): Int = runOnHandler {
         val cfg = config
         enforcer.stopNow(packages.filter { it != selfPackage && it !in ALWAYS_PROTECTED && cfg?.protectedPackages?.contains(it) != true })
@@ -200,6 +400,7 @@ internal class Daemon(private val selfPackage: String) {
 
     fun resetRestrictions() {
         runOnHandler {
+            for (pkg in restrictions.frozen.keys.toList()) restore(pkg, shellFallback = true)
             for (pkg in restrictions.background) uidOf(pkg)?.let { unrestrictBackground(pkg, it) }
             for (pkg in restrictions.standby) system.setStandbyBucket(pkg, SystemApis.BUCKET_ACTIVE, userId)
             restrictions.background.clear()
@@ -218,6 +419,20 @@ internal class Daemon(private val selfPackage: String) {
         stops = log.total,
     ).toJson()
 
+    /** Packages Stop froze permanently, comma separated: the app uses it to tell them apart from
+     *  a plain suspend made from the home screen. */
+    fun frozenPackages(): String = runOnHandler {
+        restrictions.frozen.keys.filter { it.isNotEmpty() }.joinToString(",")
+    } ?: ""
+
+    /** Of the comma-separated packages, the ones the framework currently reports as suspended. */
+    fun suspendedPackages(packages: String): String = runOnHandler {
+        pruneFrozen()
+        packages.split(',')
+            .filter { it.isNotBlank() && system.isSuspended(it, userId) }
+            .joinToString(",")
+    } ?: ""
+
     fun isTrustedCaller(uid: Int): Boolean {
         if (uid == 0 || uid == SHELL_UID || uid == Process.myUid()) return true
         synchronized(trustedUids) {
@@ -226,6 +441,27 @@ internal class Daemon(private val selfPackage: String) {
             if (trusted) trustedUids += uid
             return trusted
         }
+    }
+
+    /**
+     * Drops freeze records the framework no longer agrees with. A suspend can be lifted without
+     * going through Stop (the system dialog's unfreeze button, or another tool), and keeping the
+     * stale record would both mislabel the app and make "解冻" restore the wrong mechanism.
+     */
+    private fun pruneFrozen() {
+        if (restrictions.frozen.isEmpty()) return
+        val released = restrictions.frozen.keys.filter { packageName ->
+            val info = system.applicationInfo(packageName, userId)
+            info?.enabled != false && !system.isSuspended(packageName, userId)
+        }
+        if (released.isEmpty()) return
+        for (packageName in released) {
+            restrictions.frozen.remove(packageName)
+            restrictions.manual.remove(packageName)
+            recordEvent(packageName, StopReasons.THAW)
+        }
+        restrictions.save()
+        debug.write("frozen released externally: ${released.joinToString(",")}")
     }
 
     private fun onUidState(uid: Int, procState: Int) {
@@ -238,6 +474,8 @@ internal class Daemon(private val selfPackage: String) {
 
     private fun sweepNow() {
         val cfg = config ?: return
+        // The user can lift a freeze from the system's own dialog, so the record may be stale.
+        pruneFrozen()
         if (!cfg.enabled) return
         enforcer.reconcile(runningBlockedStates(enforcer.policy.blocked.values))
     }
@@ -269,6 +507,8 @@ internal class Daemon(private val selfPackage: String) {
         val forApp = ArrayList<String>()
         for (pkg in names) {
             if (pkg == selfPackage) continue
+            // 被停用/隐藏/暂停的应用本来就会以“不可用”的形式出现，不要再报给应用造成刷新循环。
+            if (pkg in restrictions.frozen) continue
             val available = system.isPackageAvailable(pkg, cfg.userId) ?: continue
             val rule = cfg.rules[pkg]
             if (rule == null) {
@@ -359,6 +599,123 @@ internal class Daemon(private val selfPackage: String) {
         if (changed) restrictions.save()
     }
 
+    /**
+     * Freezes [packageName] with the current work mode. Force stop is the default; [WorkMode.FREEZE]
+     * also makes the app unusable until it is restored, so the tool used is remembered.
+     */
+    private fun block(packageName: String): Boolean {
+        val mode = WorkMode.fromCode(config?.mode)
+        if (mode == WorkMode.SUSPEND_STOP) return blockAndSuspend(packageName)
+        val mechanism = if (mode == WorkMode.FREEZE) freeze(packageName) else null
+        if (mode == WorkMode.FREEZE && mechanism == null) {
+            Log.w(TAG, "could not freeze $packageName: no tool worked")
+            return false
+        }
+        val stopped = system.forceStop(packageName, userId)
+        if (mechanism != null) {
+            if (restrictions.frozen.put(packageName, mechanism) != mechanism) restrictions.save()
+            recordEvent(packageName, StopReasons.FREEZE)
+        }
+        if (!stopped && mechanism == null) Log.w(TAG, "could not stop $packageName")
+        return stopped || mechanism != null
+    }
+
+    /**
+     * Stops a blocked app and suspends it: it cannot come back in the background on its own, while
+     * the icon stays and the system screen explains why. Unlike [freeze] nothing is treated as a
+     * permanent decision, so lifting the restriction restores the app again.
+     */
+    private fun blockAndSuspend(packageName: String): Boolean {
+        val dialog = config?.suspendDialog?.ifBlank { null }
+        val suspended = system.setSuspended(packageName, true, userId, dialog)
+        if (suspended && restrictions.auto.add(packageName)) restrictions.save()
+        val stopped = system.forceStop(packageName, userId)
+        if (!suspended) Log.w(TAG, "could not suspend $packageName in ${WorkMode.SUSPEND_STOP.code} mode")
+        return suspended || stopped
+    }
+
+    /**
+     * Permanently freezes one package with the first tool that works.
+     *
+     * Suspend goes first: `pm suspend` keeps the icon in the launcher (greyed out), the app cannot
+     * start, and tapping the icon shows the system screen with our explanation — no shortcut needed
+     * to find the app again. Disable (icon disappears) and hide are fallbacks for ROMs that refuse
+     * to suspend. The tool that actually worked is recorded so [restore] can undo exactly that one.
+     */
+    private fun freeze(packageName: String, shellFallback: Boolean = false): String? {
+        // Freezing means "turned off", so disabling is the primary mechanism: unlike a suspension
+        // it cannot be lifted from the launch dialog (whose unsuspend button exists for suspendNow)
+        // and it keeps the app out of the launcher until the user restores it.
+        if (system.setEnabled(packageName, false, userId)) return FROZEN_DISABLE
+        if (shellFallback && disableViaShell(packageName, true)) return FROZEN_DISABLE
+        if (system.setHidden(packageName, true, userId)) return FROZEN_HIDE
+        return null
+    }
+
+    private fun suspendViaShell(packageName: String, suspend: Boolean): Boolean =
+        output(listOf("pm", if (suspend) "suspend" else "unsuspend", "--user", userId.toString(), packageName)) != null
+
+    /** Restarts exactly the activity the user aimed at, over the system's "suspended" dialog. */
+    private fun launch(packageName: String, activity: String): Boolean {
+        val result = output(
+            listOf(
+                "am", "start",
+                "--user", userId.toString(),
+                "-n", "$packageName/$activity",
+            )
+        ) ?: return false
+        return !result.contains("Error")
+    }
+
+    private fun disableViaShell(packageName: String, disable: Boolean): Boolean =
+        output(listOf("pm", if (disable) "disable-user" else "enable", "--user", userId.toString(), packageName)) != null
+
+    /** Undoes whatever [block] did, so the app can be launched again. */
+    private fun restore(packageName: String, shellFallback: Boolean = false): Boolean {
+        val mechanism = restrictions.frozen[packageName]
+        val released = when (mechanism) {
+            FROZEN_DISABLE -> system.setEnabled(packageName, true, userId) ||
+                (shellFallback && disableViaShell(packageName, false))
+            FROZEN_HIDE -> system.setHidden(packageName, false, userId)
+            FROZEN_SUSPEND -> system.setSuspended(packageName, false, userId, null) ||
+                (shellFallback && suspendViaShell(packageName, false))
+            // Suspended from the home screen, which doesn't record a mechanism: undo both.
+            else -> {
+                system.setSuspended(packageName, false, userId, null) ||
+                    (shellFallback && suspendViaShell(packageName, false))
+                system.setEnabled(packageName, true, userId)
+                !system.isSuspended(packageName, userId)
+            }
+        }
+        debug.write("restore pkg=$packageName mechanism=$mechanism released=$released")
+        // Keeping the record on failure matters: dropping it while the framework still holds the
+        // app suspended leaves a package that nothing tracks, so no later sweep can undo it.
+        if (!released) return false
+        restrictions.manual.remove(packageName)
+        // A restriction-store entry is only present for mode-based suspensions.
+        if (restrictions.auto.remove(packageName)) restrictions.save()
+        if (restrictions.frozen.remove(packageName) != null) restrictions.save()
+        // Untracked suspensions are undone here too, so they still belong in the event log.
+        recordEvent(packageName, StopReasons.THAW)
+        return true
+    }
+
+    /** Restores apps frozen under another mode, or that are no longer blocked. */
+    private fun syncFrozen(mode: WorkMode, wanted: Set<String>) {
+        // Suspensions made by the forced-stop-plus-suspend mode are lifted as soon as they no
+        // longer apply, so switching modes must not leave apps stuck in the suspended state.
+        for (pkg in restrictions.auto.toList()) {
+            if (pkg in wanted && mode == WorkMode.SUSPEND_STOP) continue
+            restore(pkg)
+        }
+        for ((pkg, frozenMode) in restrictions.frozen.toMap()) {
+            // Hand-frozen apps stay frozen while they are still limited, whatever the work mode.
+            if (pkg in wanted && pkg in restrictions.manual) continue
+            if (pkg in wanted && WorkMode.fromCode(frozenMode) == mode) continue
+            restore(pkg)
+        }
+    }
+
     /** Using an app lifts its standby bucket, so restrictions are re-applied after each stop. */
     private fun reapplyRestrictions(packageName: String) {
         if (packageName in restrictions.standby) system.setStandbyBucket(packageName, restrictedBucket, userId)
@@ -401,6 +758,14 @@ internal class Daemon(private val selfPackage: String) {
         const val BUCKET_RARE = 40
         val APP_UID_RANGE = 10_000..19_999
 
+        /** How a package was frozen, stored in [io.github.burakgon.stop.daemon.RestrictionStore.frozen]. */
+        const val FROZEN_DISABLE = "disable"
+        const val FROZEN_HIDE = "hide"
+        const val FROZEN_SUSPEND = "suspend"
+
+        /** A daemon younger than this is most likely the sibling that Shizuku is still starting. */
+        const val SIBLING_GRACE_SECONDS = 10.0
+
         /** Never touched, whatever the app sends. */
         val ALWAYS_PROTECTED = setOf(
             "android",
@@ -415,5 +780,16 @@ internal class Daemon(private val selfPackage: String) {
         const val IDLE_POLL_INTERVAL_MS = 30_000L
         const val PUSH_DELAY_MS = 300L
         const val RECHECK_AFTER_UPDATE_MS = 5_000L
+
+        /** How often the daemon looks for the system's "app suspended" screen while freezing. */
+        /** `I/ActivityTaskManager: START u0 {flg=0x10200000 cmp=com.foo/.Main} from uid 10123`. */
+        val START_PATTERN = Regex("""START u\d* \{.*?cmp=([A-Za-z0-9_.]+)/([^\s}]+)""")
+
+        /** One "tapped while frozen" event per package per window, however long the screen stays. */
+        /** Guards against the same activity start being seen twice; a later tap must work again. */
+        const val ACTION_DEDUPE_MS = 2_000L
+
+        /** logcat exits when the log buffers are recreated; the watcher re-arms itself. */
+        const val WATCHER_RESTART_MS = 5_000L
     }
 }

@@ -6,8 +6,7 @@ plugins {
 
 android {
     namespace = "io.github.burakgon.stop.hiddenapi"
-    compileSdk = 37
-    enableKotlin = false
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 28

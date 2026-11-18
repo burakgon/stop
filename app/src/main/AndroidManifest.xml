@@ -60,6 +60,23 @@
             android:taskAffinity=""
             android:theme="@style/Theme.Stop.Invisible" />
 
+        <!--
+          Launched by a pinned freeze shortcut, so it must stay exported: the launcher starts it
+          for the user, not for Stop itself. It toggles one package and exits.
+        -->
+        <!-- Reached from the settings screen; batch freeze of the audited preinstalled apps. -->
+        <activity
+            android:name=".ui.bloatware.BloatwareActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.shortcut.FreezeShortcutActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@style/Theme.Stop.Invisible" />
+
         <service
             android:name=".tile.StopTileService"
             android:exported="true"

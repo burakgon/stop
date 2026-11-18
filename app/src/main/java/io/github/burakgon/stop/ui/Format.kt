@@ -38,6 +38,9 @@ fun reasonLabel(reason: StopReason): String = stringResource(
         StopReason.LEFT -> R.string.reason_left
         StopReason.RUNNING -> R.string.reason_running
         StopReason.MANUAL -> R.string.reason_manual
+        StopReason.TAPPED -> R.string.reason_tapped
+        StopReason.FREEZE -> R.string.reason_freeze
+        StopReason.THAW -> R.string.reason_thaw
     }
 )
 

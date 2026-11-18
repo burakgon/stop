@@ -39,6 +39,14 @@ class SettingsViewModel(private val graph: AppGraph) : ViewModel() {
         }
     }
 
+    /** Restores apps frozen with disable/hide/suspend, without touching the rules. */
+    fun restoreFrozen(onDone: () -> Unit) {
+        viewModelScope.launch {
+            graph.daemon.call { it.resetRestrictions() }
+            onDone()
+        }
+    }
+
     fun clearHistory(onDone: () -> Unit) {
         viewModelScope.launch {
             graph.events.clear()

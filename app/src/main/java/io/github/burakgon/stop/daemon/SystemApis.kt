@@ -6,6 +6,7 @@ import android.app.ApplicationExitInfo
 import android.app.IActivityManager
 import android.app.IUidObserver
 import android.app.usage.IUsageStatsManager
+import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.ChangedPackages
 import android.content.pm.IPackageManager
@@ -13,6 +14,7 @@ import android.os.Build
 import android.os.IBinder
 import android.os.IDeviceIdleController
 import android.os.IPowerManager
+import android.os.PersistableBundle
 import android.os.ServiceManager
 import android.util.Log
 import com.android.internal.app.IAppOpsService
@@ -45,6 +47,29 @@ internal class SystemApis {
     }
     private val exitReasonsMethod: Method? = am.javaClass.methods.firstOrNull {
         it.name == "getHistoricalProcessExitReasons" && it.parameterTypes.size == 4
+    }
+    private val setEnabledMethod: Method? = pm.javaClass.methods.firstOrNull {
+        it.name == "setApplicationEnabledSetting" && it.parameterTypes.size == 5
+    }
+    private val setHiddenMethod: Method? = pm.javaClass.methods.firstOrNull {
+        it.name == "setApplicationHiddenSettingAsUser" && it.parameterTypes.size == 3
+    }
+    private val suspendMethod: Method? = pm.javaClass.methods.firstOrNull {
+        it.name == "setPackagesSuspendedAsUser"
+    }
+    private val suspendedMethod: Method? = pm.javaClass.methods.firstOrNull {
+        it.name == "isPackageSuspendedForUser" && it.parameterTypes.size == 2
+    }
+
+    /** True while the package is suspended for this user (framework state, not our bookkeeping). */
+    fun isSuspended(packageName: String, userId: Int): Boolean {
+        val method = suspendedMethod ?: return false
+        return try {
+            method.invoke(pm, packageName, userId) as? Boolean ?: false
+        } catch (e: Throwable) {
+            Log.w(TAG, "isPackageSuspendedForUser($packageName) failed", e)
+            false
+        }
     }
 
     fun registerUidObserver(observer: IUidObserver): Boolean {
@@ -102,6 +127,31 @@ internal class SystemApis {
         (tasks?.firstOrNull() as ActivityManager.RunningTaskInfo?)?.let {
             it.baseActivity?.packageName to it.topActivity?.packageName
         }
+    } catch (_: Throwable) {
+        null
+    }
+
+    /**
+     * The frozen package the user just tried to open, if the system's "app suspended" screen is on
+     * top. Android starts [SUSPENDED_SCREEN] with the original launch intent as the task's base
+     * intent, which is how the tapped package is recovered without reading usage stats.
+     */
+    fun suspendedTarget(): String? = try {
+        val tasks = getTasksMethod?.invoke(am, 1) as List<*>?
+        val task = tasks?.firstOrNull() as? ActivityManager.RunningTaskInfo
+        val top = task?.topActivity
+        if (top == null || top.className != SUSPENDED_SCREEN) {
+            null
+        } else {
+            baseIntentPackage(task) ?: task.baseActivity?.packageName?.takeIf { it != SYSTEM_PACKAGE }
+        }
+    } catch (_: Throwable) {
+        null
+    }
+
+    private fun baseIntentPackage(task: ActivityManager.RunningTaskInfo): String? = try {
+        val field = task.javaClass.getField("baseIntent")
+        (field.get(task) as? Intent)?.component?.packageName?.takeIf { it != SYSTEM_PACKAGE }
     } catch (_: Throwable) {
         null
     }
@@ -187,6 +237,110 @@ internal class SystemApis {
         false
     }
 
+    /** pm disable / pm enable, i.e. the "disabled" component state. */
+    fun setEnabled(packageName: String, enabled: Boolean, userId: Int): Boolean {
+        val method = setEnabledMethod ?: return false
+        return try {
+            val state = if (enabled) COMPONENT_ENABLED_STATE_DEFAULT else COMPONENT_ENABLED_STATE_DISABLED
+            method.invoke(pm, packageName, state, ENABLED_FLAGS, userId, SHELL_PACKAGE)
+            true
+        } catch (e: Throwable) {
+            Log.w(TAG, "setApplicationEnabledSetting($packageName, ${if (enabled) "enable" else "disable"}) failed", e)
+            false
+        }
+    }
+
+    /** pm hide / pm unhide. A hidden package is invisible to every non-privileged caller. */
+    fun setHidden(packageName: String, hidden: Boolean, userId: Int): Boolean {
+        val method = setHiddenMethod ?: return false
+        return try {
+            method.invoke(pm, packageName, hidden, userId)
+            true
+        } catch (e: Throwable) {
+            Log.w(TAG, "setApplicationHiddenSettingAsUser($packageName, $hidden) failed", e)
+            false
+        }
+    }
+
+    /**
+     * pm suspend / pm unsuspend: the launcher greys the icon out, the app cannot start and tapping
+     * it opens the system's "app suspended" screen showing [dialogMessage].
+     */
+    fun setSuspended(
+        packageName: String,
+        suspended: Boolean,
+        userId: Int,
+        dialogMessage: String? = null,
+    ): Boolean {
+        val method = suspendMethod ?: run {
+            Log.w(TAG, "setPackagesSuspendedAsUser is not available on this build")
+            return false
+        }
+        return try {
+            // Android 15 takes nine arguments (…, SuspendDialogInfo, int flags, String
+            // callingPackage, int userId, int callingUid); older releases took seven or eight, and
+            // API 28 had a String dialog message. Build the arguments from the real parameter list.
+            val types = method.parameterTypes
+            val args = arrayOfNulls<Any?>(types.size)
+            args[0] = arrayOf(packageName)
+            args[1] = suspended
+            for (index in 2 until types.size) {
+                val type = types[index]
+                args[index] = when {
+                    type == PersistableBundle::class.java -> PersistableBundle()
+                    type.name.endsWith("SuspendDialogInfo") -> suspendDialogInfo(dialogMessage)
+                    type == String::class.java -> SHELL_PACKAGE
+                    // The user id follows the calling package; the flags and the calling uid don't.
+                    type == Int::class.javaPrimitiveType ->
+                        if (types[index - 1] == String::class.java) userId else 0
+                    else -> null
+                }
+            }
+            val result = method.invoke(pm, *args)
+            val done = result !is Boolean || result
+            Log.i(TAG, "setPackagesSuspendedAsUser($packageName, $suspended, ${types.size} args) = $done")
+            done
+        } catch (e: Throwable) {
+            Log.w(TAG, "setPackagesSuspendedAsUser($packageName, $suspended) failed", e)
+            false
+        }
+    }
+
+    /** `SuspendDialogInfo.BUTTON_ACTION_UNSUSPEND`, read from the build instead of hard-coding it. */
+    private fun unsuspendButtonAction(): Int? = try {
+        Class.forName("android.content.pm.SuspendDialogInfo")
+            .getField("BUTTON_ACTION_UNSUSPEND")
+            .getInt(null)
+    } catch (e: Throwable) {
+        Log.w(TAG, "no BUTTON_ACTION_UNSUSPEND on this build", e)
+        null
+    }
+
+    /** Builds the suspend dialog reflectively: [SuspendDialogInfo] is not part of the public SDK. */
+    private fun suspendDialogInfo(message: String?): Any? {
+        if (message.isNullOrBlank()) return null
+        return try {
+            val builderClass = Class.forName("android.content.pm.SuspendDialogInfo\$Builder")
+            val builder = builderClass.getDeclaredConstructor().newInstance()
+            builderClass.getMethod("setMessage", String::class.java).invoke(builder, message)
+            // The system's "unfreeze" button: tapping it unsuspends the app on the spot, so the
+            // user does not have to walk back to Stop for the same outcome.
+            unsuspendButtonAction()?.let { action ->
+                try {
+                    builderClass
+                        .getMethod("setNeutralButtonAction", Int::class.javaPrimitiveType)
+                        .invoke(builder, action)
+                } catch (e: Throwable) {
+                    Log.w(TAG, "this build cannot offer the unfreeze button", e)
+                }
+            }
+            builderClass.getMethod("build").invoke(builder)
+        } catch (e: Throwable) {
+            Log.w(TAG, "could not describe the suspend dialog, using the system one", e)
+            null
+        }
+    }
+
     fun ensurePowerWhitelisted(packageName: String) {
         try {
             val controller = deviceIdle ?: return
@@ -199,7 +353,12 @@ internal class SystemApis {
     companion object {
         private const val TAG = "StopDaemon"
         private const val SHELL_PACKAGE = "com.android.shell"
+        private const val COMPONENT_ENABLED_STATE_DEFAULT = 0
+        private const val COMPONENT_ENABLED_STATE_DISABLED = 2
+        private const val ENABLED_FLAGS = 0
         private const val RECENT_EXITS = 5
+        private const val SYSTEM_PACKAGE = "android"
+        private const val SUSPENDED_SCREEN = "com.android.internal.app.SuspendedAppActivity"
         private const val SUBREASON_KILL_BACKGROUND = 24
         const val PER_USER_RANGE = 100_000
         private val APP_UID_RANGE = 10_000..19_999

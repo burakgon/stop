@@ -18,7 +18,7 @@ import kotlinx.coroutines.launch
 
 class ActivityViewModel(private val graph: AppGraph) : ViewModel() {
 
-    enum class Filter { ALL, WOKE, LEFT, MANUAL }
+    enum class Filter { ALL, WOKE, LEFT, MANUAL, FROZEN }
 
     /** One line in the list; consecutive identical stops of the same app are folded together. */
     data class Row(val event: StopEvent, val label: String, val count: Int)
@@ -71,6 +71,7 @@ class ActivityViewModel(private val graph: AppGraph) : ViewModel() {
         Filter.WOKE -> reason == StopReason.WOKE
         Filter.LEFT -> reason == StopReason.LEFT
         Filter.MANUAL -> reason == StopReason.MANUAL || reason == StopReason.RUNNING
+        Filter.FROZEN -> reason.isFreeze
     }
 
     /** [events] are newest first; runs of the same app and reason within an hour become one row. */
